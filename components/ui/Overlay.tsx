@@ -1,0 +1,534 @@
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
+  Repeat,
+  Volume2,
+  VolumeX
+} from "lucide-react";
+import {
+  portfolioData,
+  PROJECT_CATEGORIES,
+  SILO_LEVELS,
+  type ProjectItem
+} from "@/data/portfolio";
+import { useSiloStore } from "@/store/useSiloStore";
+import ProjectHoverPreview from "@/components/ui/ProjectHoverPreview";
+
+const eyebrow =
+  "font-mono text-[10px] uppercase tracking-[0.32em] text-zinc-400";
+
+export default function Overlay() {
+  const {
+    currentStepIndex,
+    isTransitioning,
+    isPanelOpen,
+    loopNavigation,
+    soundEnabled,
+    activeProjectFilter,
+    nextStep,
+    prevStep,
+    goToStep,
+    setIsPanelOpen,
+    toggleLoopNavigation,
+    toggleSound,
+    setActiveProjectFilter
+  } = useSiloStore();
+
+  const wheelLockRef = useRef<number>(0);
+  const touchStartYRef = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [hoveredProject, setHoveredProject] = useState<ProjectItem | null>(null);
+
+  const currentLevel = SILO_LEVELS[currentStepIndex];
+  // Stage 2: the black portal only opens once the camera has arrived at the floor
+  const shutterOpen = isPanelOpen && !isTransitioning;
+  const last = SILO_LEVELS.length - 1;
+  const nextLevel =
+    currentStepIndex < last
+      ? SILO_LEVELS[currentStepIndex + 1]
+      : loopNavigation
+      ? SILO_LEVELS[0]
+      : null;
+  const prevLevel =
+    currentStepIndex > 0
+      ? SILO_LEVELS[currentStepIndex - 1]
+      : loopNavigation
+      ? SILO_LEVELS[last]
+      : null;
+
+  // Warm the cache for the hover previews once the Selected Work floor is reached
+  const preloadedRef = useRef(false);
+  useEffect(() => {
+    if (currentStepIndex !== 2 || preloadedRef.current) return;
+    preloadedRef.current = true;
+    portfolioData.projects.forEach((p) =>
+      p.preview.images.forEach(({ src }) => {
+        const img = new Image();
+        img.src = src;
+      })
+    );
+  }, [currentStepIndex]);
+
+  useEffect(() => {
+    if (!shutterOpen || currentStepIndex !== 2) setHoveredProject(null);
+  }, [shutterOpen, currentStepIndex]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp" || e.key === "PageUp") {
+        e.preventDefault();
+        nextStep();
+      } else if (e.key === "ArrowDown" || e.key === "PageDown") {
+        e.preventDefault();
+        prevStep();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [nextStep, prevStep]);
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest(".scrollable-area")) return;
+    const now = Date.now();
+    if (now - wheelLockRef.current < 1100) return;
+    if (Math.abs(e.deltaY) < 30) return;
+    wheelLockRef.current = now;
+    if (e.deltaY < 0) nextStep();
+    else prevStep();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest(".scrollable-area")) return;
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartYRef.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+    touchStartYRef.current = null;
+    if (Math.abs(deltaY) > 45) {
+      if (deltaY < 0) nextStep();
+      else prevStep();
+    }
+  };
+
+  const filteredProjects =
+    activeProjectFilter === "All"
+      ? portfolioData.projects
+      : portfolioData.projects.filter((p) => p.category === activeProjectFilter);
+
+  const accent = currentLevel.accentColor;
+
+  return (
+    <div
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="pointer-events-auto fixed inset-0 z-20 select-none overflow-hidden"
+    >
+      {/* ---- Top-left: identity ---- */}
+      <div className="absolute left-6 top-6 sm:left-9 sm:top-8">
+        <p className={eyebrow}>
+          {currentLevel.code}
+          <span className="mx-2 text-zinc-600">/</span>
+          +{currentLevel.elevationMeters.toFixed(1)}m
+        </p>
+        <p className="mt-2 text-sm font-medium tracking-tight text-white">
+          {portfolioData.profile.name}
+        </p>
+        <p className="text-[11px] text-zinc-400">{portfolioData.profile.title}</p>
+      </div>
+
+      {/* ---- Top-right: toggles (plain text) ---- */}
+      <div className="absolute right-6 top-6 flex items-center gap-5 sm:right-9 sm:top-8">
+        <button
+          type="button"
+          onClick={() => setIsPanelOpen(!isPanelOpen)}
+          className={`${eyebrow} transition hover:text-white`}
+        >
+          {isPanelOpen ? "Peek inside silo" : "Open floor section"}
+        </button>
+        <button
+          type="button"
+          onClick={toggleLoopNavigation}
+          aria-label="Toggle loop navigation"
+          title="Loop navigation"
+          className={`transition ${
+            loopNavigation ? "text-amber-400" : "text-zinc-600 hover:text-zinc-300"
+          }`}
+        >
+          <Repeat className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={toggleSound}
+          aria-label="Toggle sound"
+          className="text-zinc-400 transition hover:text-white"
+        >
+          {soundEnabled ? (
+            <Volume2 className="h-3.5 w-3.5" />
+          ) : (
+            <VolumeX className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </div>
+
+      {/* ---- Top-center: ascend ---- */}
+      <button
+        type="button"
+        onClick={nextStep}
+        disabled={!nextLevel || isTransitioning}
+        aria-label={nextLevel ? `Ascend to ${nextLevel.shortTitle}` : "Top floor"}
+        className="group absolute left-1/2 top-5 flex -translate-x-1/2 flex-col items-center gap-1 text-zinc-400 transition hover:text-white disabled:opacity-25"
+      >
+        <ChevronUp className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
+        <span className={eyebrow}>
+          {nextLevel ? `Ascend · ${nextLevel.shortTitle}` : "Top of silo"}
+        </span>
+      </button>
+
+      {/* ---- Bottom-center: descend ---- */}
+      <button
+        type="button"
+        onClick={prevStep}
+        disabled={!prevLevel || isTransitioning}
+        aria-label={prevLevel ? `Descend to ${prevLevel.shortTitle}` : "Ground floor"}
+        className="group absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-zinc-400 transition hover:text-white disabled:opacity-25"
+      >
+        <span className={eyebrow}>
+          {prevLevel ? `Descend · ${prevLevel.shortTitle}` : "Ground floor"}
+        </span>
+        <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
+      </button>
+
+      {/* ---- Left edge: vertical elevation readout ---- */}
+      <div className="absolute left-7 top-1/2 hidden -translate-y-1/2 lg:block">
+        <p
+          className={`${eyebrow} origin-center -rotate-90 whitespace-nowrap`}
+          style={{ transform: "translateX(-50%) rotate(-90deg)" }}
+        >
+          {isTransitioning ? "Ascending" : "Elevation"} · +
+          {currentLevel.elevationMeters.toFixed(1)}m
+        </p>
+      </div>
+
+      {/* ---- Right edge: hairline floor rail ---- */}
+      <nav
+        aria-label="Floors"
+        className="absolute right-6 top-1/2 hidden -translate-y-1/2 flex-col items-end gap-3 sm:right-9 md:flex"
+      >
+        {[...SILO_LEVELS].reverse().map((lvl) => {
+          const active = lvl.index === currentStepIndex;
+          return (
+            <button
+              key={lvl.id}
+              type="button"
+              onClick={() => goToStep(lvl.index)}
+              aria-label={`Floor ${lvl.floorNumber} ${lvl.shortTitle}`}
+              className="group flex items-center gap-3 text-right"
+            >
+              <span
+                className={`font-mono text-[10px] tracking-[0.25em] transition ${
+                  active
+                    ? "text-white"
+                    : "text-zinc-600 opacity-0 group-hover:opacity-100 group-hover:text-zinc-300"
+                }`}
+              >
+                {lvl.shortTitle}
+              </span>
+              <span
+                className={`font-mono text-[11px] transition ${
+                  active ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
+                }`}
+              >
+                {lvl.floorNumber}
+              </span>
+              <span
+                className="h-px transition-all duration-500"
+                style={{
+                  width: active ? 28 : 12,
+                  backgroundColor: active ? accent : "#5a3f22"
+                }}
+              />
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* ---- Centre: the black shutter portal over the cutaway ---- */}
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-6 sm:px-12">
+        <div
+          ref={panelRef}
+          data-shutter={shutterOpen ? "open" : "closed"}
+          className={`relative w-full max-w-2xl origin-center overflow-hidden border border-zinc-700/50 bg-[#0d0703]/95 px-7 py-7 transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-10 sm:py-9 ${
+            shutterOpen
+              ? "pointer-events-auto scale-y-100 opacity-100"
+              : "pointer-events-none scale-y-0 opacity-0"
+          }`}
+        >
+          {/* glowing top / bottom seam lines */}
+          <div
+            className="absolute inset-x-0 top-0 h-px"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+              boxShadow: `0 0 14px ${accent}`
+            }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-px"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+              boxShadow: `0 0 14px ${accent}`
+            }}
+          />
+
+          {/* section eyebrow */}
+          <div className="mb-6 flex items-baseline justify-between gap-4">
+            <p className={eyebrow}>
+              <span style={{ color: accent }}>{currentLevel.label}</span>
+            </p>
+            <p className={`${eyebrow} hidden sm:block`}>{currentLevel.subtitle}</p>
+          </div>
+
+          {/* 00 · Intro / Hero */}
+          {currentStepIndex === 0 && (
+            <div>
+              <p className={eyebrow}>
+                {portfolioData.profile.location}
+                <span className="mx-2 text-zinc-600">/</span>
+                <span style={{ color: accent }}>{portfolioData.profile.status}</span>
+              </p>
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-6xl">
+                {portfolioData.profile.name}
+              </h2>
+              <p className="mt-2 text-base text-zinc-200 sm:text-lg">
+                {portfolioData.profile.title}
+              </p>
+              <p className="mt-5 max-w-md text-sm leading-relaxed text-zinc-400">
+                {portfolioData.profile.tagline}
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className={`${eyebrow} border-b border-current pb-1 text-white transition hover:text-amber-300`}
+                >
+                  Ascend to Experience
+                </button>
+                <TextLink href={portfolioData.profile.socials.github}>GitHub</TextLink>
+                <TextLink href={portfolioData.profile.socials.linkedin}>LinkedIn</TextLink>
+                <TextLink href={portfolioData.profile.socials.resume} newTab={false}>
+                  Resume
+                </TextLink>
+              </div>
+            </div>
+          )}
+
+          {/* 01 · Experience */}
+          {currentStepIndex === 1 && (
+            <div className="divide-y divide-zinc-800">
+              {portfolioData.experience.map((exp) => (
+                <div
+                  key={exp.company}
+                  className="grid grid-cols-1 gap-3 py-5 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]"
+                >
+                  <p className={`${eyebrow} pt-1`}>{exp.period}</p>
+                  <div>
+                    <h3 className="text-base font-medium text-white">{exp.role}</h3>
+                    <p className="mt-0.5 text-sm text-zinc-400">{exp.company}</p>
+                    <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-zinc-300">
+                      {exp.highlights.map((h) => (
+                        <li key={h} className="flex gap-3">
+                          <span className="text-zinc-600">—</span>
+                          <span>{h}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 02 · Featured & Selected Work */}
+          {currentStepIndex === 2 && (
+            <div>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-zinc-800 pb-3">
+                {PROJECT_CATEGORIES.map((tag) => {
+                  const active = activeProjectFilter === tag;
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setActiveProjectFilter(tag)}
+                      className={`font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400 -mb-[13px] border-b pb-3 transition ${
+                        active
+                          ? "border-current text-white"
+                          : "border-transparent hover:text-zinc-200"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div
+                className="scrollable-area mt-1 max-h-[46vh] overflow-y-auto pr-2"
+                onMouseLeave={() => setHoveredProject(null)}
+              >
+                <div className="divide-y divide-zinc-800">
+                  {filteredProjects.map((project) => (
+                    <article
+                      key={project.id}
+                      className="py-4"
+                      onMouseEnter={() => setHoveredProject(project)}
+                    >
+                      <div className="flex items-baseline justify-between gap-4">
+                        <h3 className="text-base font-medium text-white">
+                          {project.title}
+                        </h3>
+                        <span className={eyebrow}>{project.tag}</span>
+                      </div>
+                      <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-zinc-400">
+                        {project.description}
+                      </p>
+                      <div className="mt-2.5 flex items-center justify-between gap-4">
+                        <p className="font-mono text-[10px] tracking-wider text-zinc-500">
+                          {project.stack.join(" · ")}
+                        </p>
+                        <div className="flex shrink-0 items-center gap-4">
+                          {project.liveUrl && (
+                            <TextLink href={project.liveUrl}>Live</TextLink>
+                          )}
+                          {project.demoUrl && (
+                            <TextLink href={project.demoUrl}>Demo</TextLink>
+                          )}
+                          {project.frontendUrl && (
+                            <TextLink href={project.frontendUrl}>Code</TextLink>
+                          )}
+                          {project.backendUrl && (
+                            <TextLink href={project.backendUrl}>API</TextLink>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 03 · Capabilities & Skills */}
+          {currentStepIndex === 3 && (
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
+              <SkillColumn
+                title="Frontend & Mobile"
+                items={portfolioData.capabilities.frontendAndMobile}
+              />
+              <SkillColumn title="Backend" items={portfolioData.capabilities.backend} />
+              <SkillColumn title="Tools" items={portfolioData.capabilities.tools} />
+            </div>
+          )}
+
+          {/* 04 · About Me */}
+          {currentStepIndex === 4 && (
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                {portfolioData.about.headline}
+              </h2>
+              <p className="mt-5 max-w-xl text-sm leading-relaxed text-zinc-300">
+                {portfolioData.about.bio}
+              </p>
+              <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-zinc-800 pt-5 sm:grid-cols-3">
+                <Fact label="Location" value={portfolioData.profile.location} />
+                <Fact label="Core stack" value="Next.js, React, Expo" />
+                <Fact label="Status" value={portfolioData.profile.status} />
+              </dl>
+            </div>
+          )}
+
+          {/* 05 · Contact */}
+          {currentStepIndex === 5 && (
+            <div>
+              <p className="max-w-md text-sm leading-relaxed text-zinc-400">
+                Open to frontend engineering roles, Next.js and React Native builds,
+                and collaborations.
+              </p>
+              <a
+                href={`mailto:${portfolioData.profile.email}`}
+                className="mt-6 block w-fit text-2xl font-medium tracking-tight text-white underline decoration-zinc-700 underline-offset-8 transition hover:decoration-current sm:text-4xl"
+              >
+                {portfolioData.profile.email}
+              </a>
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-zinc-800 pt-5">
+                <span className={eyebrow}>{portfolioData.profile.location}</span>
+                <TextLink href={portfolioData.profile.socials.github}>GitHub</TextLink>
+                <TextLink href={portfolioData.profile.socials.linkedin}>LinkedIn</TextLink>
+                <TextLink href={portfolioData.profile.socials.resume} newTab={false}>
+                  Resume
+                </TextLink>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ProjectHoverPreview
+        project={hoveredProject}
+        accent={accent}
+        anchorRef={panelRef}
+      />
+    </div>
+  );
+}
+
+function TextLink({
+  href,
+  children,
+  newTab = true
+}: {
+  href: string;
+  children: React.ReactNode;
+  newTab?: boolean;
+}) {
+  return (
+    <a
+      href={href}
+      target={newTab ? "_blank" : undefined}
+      rel={newTab ? "noreferrer" : undefined}
+      className={`${eyebrow} inline-flex items-center gap-1 transition hover:text-white`}
+    >
+      {children}
+      <ArrowUpRight className="h-3 w-3" />
+    </a>
+  );
+}
+
+function SkillColumn({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div>
+      <p className={`${eyebrow} border-b border-zinc-800 pb-2`}>{title}</p>
+      <ul className="mt-3 space-y-1.5">
+        {items.map((item) => (
+          <li key={item} className="text-sm text-zinc-200">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className={eyebrow}>{label}</dt>
+      <dd className="mt-1.5 text-sm text-white">{value}</dd>
+    </div>
+  );
+}

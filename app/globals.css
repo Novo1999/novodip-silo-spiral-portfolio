@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #0e0804;
+  color: #f6e8d0;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* hairline scrollbar for the project list inside the portal */
+.scrollable-area {
+  scrollbar-width: thin;
+  scrollbar-color: #3a2813 transparent;
+}
+.scrollable-area::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollable-area::-webkit-scrollbar-thumb {
+  background: #3a2813;
+}
+
+/* no focus boxes after mouse clicks; a hairline ring only for keyboard focus */
+button:focus,
+a:focus {
+  outline: none;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 1px 0 0 #a9834f;
+}
+
+/* ---- Selected Work hover preview ---- */
+
+/* the frame opens like the section shutter: scaleY from the centre */
+.project-preview-shell {
+  transform-origin: center;
+  transform: scaleY(0);
+  opacity: 0;
+  filter: blur(4px);
+  transition:
+    transform 0.32s cubic-bezier(0.55, 0, 0.75, 0),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+}
+.project-preview-shell[data-open="true"] {
+  transform: scaleY(1);
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.35s ease,
+    filter 0.45s ease;
+}
+
+/* content irises in from a horizontal slit, overexposed then settling */
+.project-preview-reveal {
+  animation: preview-iris 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes preview-iris {
+  from {
+    clip-path: inset(48% 0 48% 0);
+    filter: brightness(1.9) saturate(0.4);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+.project-preview-image {
+  animation: preview-drift 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes preview-drift {
+  from {
+    transform: scale(1.12) translateY(-2%);
+  }
+  to {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* phones rise and fan out to their tilt */
+.project-preview-phone {
+  transform: translateY(var(--lift)) rotate(var(--tilt));
+  animation: preview-phone 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes preview-phone {
+  from {
+    opacity: 0;
+    transform: translateY(36px) rotate(0deg) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(var(--lift)) rotate(var(--tilt)) scale(1);
+  }
+}
+
+.project-preview-scan {
+  animation: preview-scan 0.85s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+@keyframes preview-scan {
+  from {
+    transform: translateY(-100%);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(var(--scan-distance, 420px));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-preview-shell,
+  .project-preview-shell[data-open="true"] {
+    transform: none;
+    filter: none;
+    transition: opacity 0.2s ease;
+  }
+  .project-preview-reveal,
+  .project-preview-image,
+  .project-preview-phone,
+  .project-preview-scan {
+    animation: none;
+  }
+  .project-preview-scan {
+    display: none;
+  }
+}

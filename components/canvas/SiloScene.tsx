@@ -16,6 +16,12 @@ import { useSiloStore } from "@/store/useSiloStore";
 
 const G = SILO_GEOMETRY;
 const FLOOR_COUNT = SILO_LEVELS.length;
+/**
+ * Sections run top-down: section 0 (Hero) sits on the highest landing and
+ * the last section on the ground floor. Maps a section index to its physical
+ * floor slot (0 = ground) and back — the mapping is its own inverse.
+ */
+const slotOf = (index: number) => FLOOR_COUNT - 1 - index;
 const PIPE_PADDING = 8;
 const PIPE_TOP = G.floorHeight * (FLOOR_COUNT - 1) + PIPE_PADDING; // +48m
 const PIPE_BOTTOM = -PIPE_PADDING; // -8m
@@ -48,11 +54,13 @@ function ExteriorSiloRig({
   const currentStepIndex = useSiloStore((s) => s.currentStepIndex);
   const completeTransition = useSiloStore((s) => s.completeTransition);
 
-  const anim = useRef({ floorProgress: 0 });
+  const anim = useRef({
+    floorProgress: slotOf(useSiloStore.getState().currentStepIndex)
+  });
 
   useEffect(() => {
     const tween = gsap.to(anim.current, {
-      floorProgress: currentStepIndex,
+      floorProgress: slotOf(currentStepIndex),
       duration: 1.35,
       ease: "power3.inOut",
       overwrite: "auto",
@@ -66,7 +74,8 @@ function ExteriorSiloRig({
       },
       onComplete: () => {
         if (stairGroupRef.current) {
-          stairGroupRef.current.rotation.y = -currentStepIndex * Math.PI * 2;
+          stairGroupRef.current.rotation.y =
+            -slotOf(currentStepIndex) * Math.PI * 2;
         }
         completeTransition();
       }
@@ -288,7 +297,7 @@ function CutawaySiloPipeStructure() {
 
       {/* Per-floor neon indicator rings + interior chamber lights */}
       {SILO_LEVELS.map((lvl) => {
-        const y = lvl.index * G.floorHeight;
+        const y = slotOf(lvl.index) * G.floorHeight;
         const active = lvl.index === currentStepIndex;
         return (
           <group key={lvl.id} position={[0, y, 0]}>
@@ -433,7 +442,7 @@ const InteriorSpiralStaircase = React.forwardRef<THREE.Group>((_, ref) => {
         strip.setMatrixAt(idx, tmpObj.matrix);
         strip.setColorAt(
           idx,
-          tmpColor.set(SILO_LEVELS[s.floorIndex].accentColor)
+          tmpColor.set(SILO_LEVELS[slotOf(s.floorIndex)].accentColor)
         );
       }
       if (strut) {
@@ -516,8 +525,8 @@ const InteriorSpiralStaircase = React.forwardRef<THREE.Group>((_, ref) => {
 
       {/* Floor landing platforms (facing the front cutaway at angle 0) */}
       {landings.map((s) => {
-        const lvl = SILO_LEVELS[s.floorIndex];
-        const active = s.floorIndex === currentStepIndex;
+        const lvl = SILO_LEVELS[slotOf(s.floorIndex)];
+        const active = lvl.index === currentStepIndex;
         const x = G.stairRadius * Math.sin(s.angle);
         const z = G.stairRadius * Math.cos(s.angle);
         return (

@@ -103,7 +103,7 @@ export default function OpengraphImage() {
           <div
             style={{
               display: "flex",
-              flexDirection: "column-reverse",
+              flexDirection: "column",
               justifyContent: "space-between",
               width: 210,
               height: 470,

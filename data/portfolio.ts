@@ -293,8 +293,8 @@ export const SILO_LEVELS: SiloLevelConfig[] = [
     floorNumber: "00",
     label: "Level 0: Intro / Hero",
     shortTitle: "Intro / Hero",
-    subtitle: "Ground Foundation — Silo Entry Chamber",
-    elevationMeters: 0.0,
+    subtitle: "Upper Silo Crown — Silo Entry Chamber",
+    elevationMeters: 40.0,
     accentColor: "#ffb24a"
   },
   {
@@ -305,7 +305,7 @@ export const SILO_LEVELS: SiloLevelConfig[] = [
     label: "Level 1: Experience",
     shortTitle: "Experience",
     subtitle: "Production Engineering & Frontend Architecture",
-    elevationMeters: 8.0,
+    elevationMeters: 32.0,
     accentColor: "#ff8c1f"
   },
   {
@@ -316,7 +316,7 @@ export const SILO_LEVELS: SiloLevelConfig[] = [
     label: "Level 2: Featured & Selected Work",
     shortTitle: "Selected Work",
     subtitle: "Shipped Web & Mobile Platforms",
-    elevationMeters: 16.0,
+    elevationMeters: 24.0,
     accentColor: "#ffc966"
   },
   {
@@ -327,7 +327,7 @@ export const SILO_LEVELS: SiloLevelConfig[] = [
     label: "Level 3: Capabilities & Skills",
     shortTitle: "Capabilities & Skills",
     subtitle: "Frontend, Mobile, Backend & Infrastructure",
-    elevationMeters: 24.0,
+    elevationMeters: 16.0,
     accentColor: "#f26b0f"
   },
   {
@@ -338,7 +338,7 @@ export const SILO_LEVELS: SiloLevelConfig[] = [
     label: "Level 4: About Me",
     shortTitle: "About Me",
     subtitle: "Engineering Philosophy & Craft",
-    elevationMeters: 32.0,
+    elevationMeters: 8.0,
     accentColor: "#ffd98a"
   },
   {
@@ -348,8 +348,8 @@ export const SILO_LEVELS: SiloLevelConfig[] = [
     floorNumber: "05",
     label: "Level 5: Contact",
     shortTitle: "Contact",
-    subtitle: "Upper Silo Crown — Direct Transmission",
-    elevationMeters: 40.0,
+    subtitle: "Ground Foundation — Direct Transmission",
+    elevationMeters: 0.0,
     accentColor: "#ff9a3c"
   }
 ];

@@ -55,7 +55,8 @@ export const useSiloStore = create<SiloState>((set, get) => ({
     if (isTransitioning || targetIndex === currentStepIndex) return;
     if (targetIndex < 0 || targetIndex >= SILO_LEVELS.length) return;
 
-    const direction = targetIndex > currentStepIndex ? "up" : "down";
+    // sections run top-down, so a later section is further down the silo
+    const direction = targetIndex > currentStepIndex ? "down" : "up";
     if (soundEnabled) {
       playSpatialStepSound(direction, targetIndex);
     }

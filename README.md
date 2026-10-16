@@ -1,6 +1,6 @@
 # Novodip — Silo Spiral Portfolio
 
-A 3D portfolio for Novodip, frontend developer (React, Next.js, React Native). You view a cutaway silo pipe from outside and climb a spiral staircase floor by floor: Intro, Experience, Selected Work, Skills, About, Contact.
+A 3D portfolio for Novodip, frontend developer (React, Next.js, React Native). You view a cutaway silo pipe from outside and descend a spiral staircase floor by floor, from Intro at the top through Experience, Selected Work, Skills and About to Contact at the bottom.
 
 Built with Next.js 14 (App Router), React Three Fiber, GSAP, Zustand and Tailwind CSS.
 

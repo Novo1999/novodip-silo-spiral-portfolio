@@ -24,6 +24,7 @@ const eyebrow =
 export default function Overlay() {
   const {
     currentStepIndex,
+    previousStepIndex,
     displayedStepIndex,
     isTransitioning,
     isPanelOpen,
@@ -84,10 +85,10 @@ export default function Overlay() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp" || e.key === "PageUp") {
+      if (e.key === "ArrowDown" || e.key === "PageDown") {
         e.preventDefault();
         nextStep();
-      } else if (e.key === "ArrowDown" || e.key === "PageDown") {
+      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
         e.preventDefault();
         prevStep();
       }
@@ -102,7 +103,7 @@ export default function Overlay() {
     if (now - wheelLockRef.current < 1100) return;
     if (Math.abs(e.deltaY) < 30) return;
     wheelLockRef.current = now;
-    if (e.deltaY < 0) nextStep();
+    if (e.deltaY > 0) nextStep();
     else prevStep();
   };
 
@@ -187,27 +188,27 @@ export default function Overlay() {
       {/* ---- Top-center: ascend ---- */}
       <button
         type="button"
-        onClick={nextStep}
-        disabled={!nextLevel || isTransitioning}
-        aria-label={nextLevel ? `Ascend to ${nextLevel.shortTitle}` : "Top floor"}
+        onClick={prevStep}
+        disabled={!prevLevel || isTransitioning}
+        aria-label={prevLevel ? `Ascend to ${prevLevel.shortTitle}` : "Top floor"}
         className="group absolute left-1/2 top-5 flex -translate-x-1/2 flex-col items-center gap-1 text-zinc-400 transition hover:text-white disabled:opacity-25"
       >
         <ChevronUp className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
         <span className={`${eyebrow} hidden sm:inline`}>
-          {nextLevel ? `Ascend · ${nextLevel.shortTitle}` : "Top of silo"}
+          {prevLevel ? `Ascend · ${prevLevel.shortTitle}` : "Top of silo"}
         </span>
       </button>
 
       {/* ---- Bottom-center: descend ---- */}
       <button
         type="button"
-        onClick={prevStep}
-        disabled={!prevLevel || isTransitioning}
-        aria-label={prevLevel ? `Descend to ${prevLevel.shortTitle}` : "Ground floor"}
+        onClick={nextStep}
+        disabled={!nextLevel || isTransitioning}
+        aria-label={nextLevel ? `Descend to ${nextLevel.shortTitle}` : "Ground floor"}
         className="group absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-zinc-400 transition hover:text-white disabled:opacity-25"
       >
         <span className={`${eyebrow} hidden sm:inline`}>
-          {prevLevel ? `Descend · ${prevLevel.shortTitle}` : "Ground floor"}
+          {nextLevel ? `Descend · ${nextLevel.shortTitle}` : "Ground floor"}
         </span>
         <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
       </button>
@@ -218,7 +219,12 @@ export default function Overlay() {
           className={`${eyebrow} origin-center -rotate-90 whitespace-nowrap`}
           style={{ transform: "translateX(-50%) rotate(-90deg)" }}
         >
-          {isTransitioning ? "Ascending" : "Elevation"} · +
+          {isTransitioning
+            ? currentStepIndex > previousStepIndex
+              ? "Descending"
+              : "Ascending"
+            : "Elevation"}{" "}
+          · +
           {currentLevel.elevationMeters.toFixed(1)}m
         </p>
       </div>
@@ -228,7 +234,7 @@ export default function Overlay() {
         aria-label="Floors"
         className="absolute right-6 top-1/2 hidden -translate-y-1/2 flex-col items-end gap-3 sm:right-9 md:flex"
       >
-        {[...SILO_LEVELS].reverse().map((lvl) => {
+        {SILO_LEVELS.map((lvl) => {
           const active = lvl.index === currentStepIndex;
           return (
             <button
@@ -326,7 +332,7 @@ export default function Overlay() {
                   onClick={nextStep}
                   className={`${eyebrow} border-b border-current pb-1 text-white transition hover:text-amber-300`}
                 >
-                  Ascend to Experience
+                  Descend to Experience
                 </button>
                 <TextLink href={portfolioData.profile.socials.github}>GitHub</TextLink>
                 <TextLink href={portfolioData.profile.socials.linkedin}>LinkedIn</TextLink>

@@ -15,7 +15,21 @@ npm start       # serve the production build
 
 ## Content
 
-All copy, projects and links live in [`data/portfolio.ts`](data/portfolio.ts). Project preview images are in `public/projects/` (WebP): one desktop screenshot for web projects and three phone screens for mobile projects.
+All copy lives in JSON files in [`data/`](data/). Edit them and rebuild; no code changes needed.
+
+| File | What it controls |
+| --- | --- |
+| `profile.json` | Name, title, tagline, location, status, email, GitHub/LinkedIn/resume links |
+| `experience.json` | Jobs: `role`, `company`, `period`, `description` bullets |
+| `projects.json` | Filter `categories` and `projects` (see below) |
+| `skills.json` | Skill groups on the Capabilities floor |
+| `about.json` | About floor `heading`, `paragraphs` and `facts` |
+| `contact.json` | Contact floor blurb |
+| `seo.json` | Page title, description, keywords, structured data |
+
+Each project needs `id`, `title`, `tag` (label beside the title), `category` (one of `categories`), `description`, `stack` and a `preview`. Links `live`, `frontend`, `backend` and `demo` are optional; leave them as `""` to hide them. For the hover preview, put images in `public/projects/` and use `"kind": "web"` with one screenshot or `"kind": "mobile"` with exactly three phone screens.
+
+The JSON is validated at build time. A mistake fails `npm run build` with a message naming the file and field, e.g. `[data] projects.json projects[1]: (docuflash-mobile) has category "Mobil"`.
 
 ## Deploy
 

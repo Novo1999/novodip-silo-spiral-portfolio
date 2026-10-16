@@ -1,64 +1,43 @@
-import { portfolioData } from "@/data/portfolio";
+import { portfolioData, seoData } from "@/data/portfolio";
 
 /**
- * Canonical origin used for metadata, sitemap, robots and JSON-LD.
- * Set NEXT_PUBLIC_SITE_URL on the host if the site moves off the default domain.
+ * SEO values come from data/seo.json. NEXT_PUBLIC_SITE_URL, when set on the
+ * host, overrides the canonical origin from the JSON.
  */
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://novodip.netlify.app"
+  process.env.NEXT_PUBLIC_SITE_URL || seoData.siteUrl
 ).replace(/\/$/, "");
 
-export const SITE_NAME = "Novodip";
+export const SITE_NAME = seoData.siteName;
+export const SITE_TITLE = seoData.title;
+export const SITE_DESCRIPTION = seoData.description;
+export const SITE_KEYWORDS = seoData.keywords;
 
-export const SITE_TITLE = "Novodip — Frontend Developer (React & Next.js)";
+const absolute = (src: string) =>
+  /^https?:\/\//.test(src) ? src : `${SITE_URL}${src.startsWith("/") ? "" : "/"}${src}`;
 
-export const SITE_DESCRIPTION =
-  "Novodip is a frontend developer in Dhaka, Bangladesh specializing in React, Next.js, and React Native — building fast, scalable web and mobile applications.";
-
-export const SITE_KEYWORDS = [
-  "Novodip",
-  "Frontend Developer",
-  "React Developer",
-  "Next.js Developer",
-  "React Native Developer",
-  "Expo",
-  "TypeScript",
-  "Tailwind CSS",
-  "Web Performance",
-  "Dhaka",
-  "Bangladesh",
-  "Portfolio"
-];
-
-/** Person / ProfilePage structured data, carried over from the previous site */
+/** Person / ProfilePage structured data */
 export const personJsonLd = {
   "@context": "https://schema.org",
   "@type": "ProfilePage",
   url: `${SITE_URL}/`,
   mainEntity: {
     "@type": "Person",
-    name: SITE_NAME,
-    jobTitle: "Frontend Developer",
+    name: portfolioData.profile.name,
+    jobTitle: seoData.person.jobTitle,
     description: SITE_DESCRIPTION,
-    image: `${SITE_URL}/portfolio-avatar.png`,
+    image: absolute(seoData.person.image),
     url: SITE_URL,
     email: `mailto:${portfolioData.profile.email}`,
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Dhaka",
-      addressCountry: "BD"
+      addressLocality: seoData.person.locality,
+      addressCountry: seoData.person.country
     },
     sameAs: [
       portfolioData.profile.socials.github,
       portfolioData.profile.socials.linkedin
     ],
-    knowsAbout: [
-      "Frontend Development",
-      "React",
-      "Next.js",
-      "React Native",
-      "TypeScript",
-      "Web Performance"
-    ]
+    knowsAbout: seoData.person.knowsAbout
   }
 };

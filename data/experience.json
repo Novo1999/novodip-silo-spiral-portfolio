@@ -1,0 +1,24 @@
+{
+  "experiences": [
+    {
+      "role": "Junior Software Engineer (Frontend)",
+      "company": "Dhrubok Infotech Services Ltd.",
+      "period": "2025 — 2026",
+      "description": [
+        "Designed and developed the TaskaTask Admin Panel using Next.js.",
+        "Built the TaskaTask mobile application using Expo and React Native.",
+        "Implemented state management with Redux for scalable mobile architecture."
+      ]
+    },
+    {
+      "role": "Junior Frontend Developer (Remote)",
+      "company": "Wensyve",
+      "period": "2024 — 2025",
+      "description": [
+        "Built scalable web applications with Next.js and React.",
+        "Focused on performance optimization and clean architecture.",
+        "Delivered polished and responsive user experiences for clients."
+      ]
+    }
+  ]
+}

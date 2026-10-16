@@ -6,7 +6,7 @@ import { portfolioData } from "@/data/portfolio";
  * portfolio as a linear document.
  */
 export default function SeoContent() {
-  const { profile, experience, projects, capabilities, about } = portfolioData;
+  const { profile, experience, projects, skills, about, contact } = portfolioData;
 
   return (
     <div className="sr-only">
@@ -72,22 +72,25 @@ export default function SeoContent() {
 
       <section aria-labelledby="seo-skills">
         <h2 id="seo-skills">Capabilities and skills</h2>
-        <h3>Frontend &amp; Mobile</h3>
-        <p>{capabilities.frontendAndMobile.join(", ")}</p>
-        <h3>Backend</h3>
-        <p>{capabilities.backend.join(", ")}</p>
-        <h3>Tools</h3>
-        <p>{capabilities.tools.join(", ")}</p>
+        {skills.map((group) => (
+          <div key={group.title}>
+            <h3>{group.title}</h3>
+            <p>{group.skills.join(", ")}</p>
+          </div>
+        ))}
       </section>
 
       <section aria-labelledby="seo-about">
         <h2 id="seo-about">About</h2>
-        <p>{about.headline}</p>
-        <p>{about.bio}</p>
+        <p>{about.heading}</p>
+        {about.paragraphs.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
       </section>
 
       <section aria-labelledby="seo-contact">
         <h2 id="seo-contact">Contact</h2>
+        <p>{contact.description}</p>
         <ul>
           <li>
             <a href={`mailto:${profile.email}`}>{profile.email}</a>

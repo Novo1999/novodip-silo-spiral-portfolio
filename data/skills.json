@@ -1,0 +1,34 @@
+{
+  "groups": [
+    {
+      "title": "Frontend & Mobile",
+      "skills": [
+        "React",
+        "Next.js",
+        "React Native",
+        "Expo",
+        "TypeScript",
+        "Tailwind CSS",
+        "Redux Toolkit"
+      ]
+    },
+    {
+      "title": "Backend",
+      "skills": [
+        "Node.js",
+        "Express.js",
+        "MongoDB",
+        "REST APIs",
+        "PostgreSQL"
+      ]
+    },
+    {
+      "title": "Tools",
+      "skills": [
+        "Git",
+        "Docker",
+        "Vercel"
+      ]
+    }
+  ]
+}

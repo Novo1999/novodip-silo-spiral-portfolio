@@ -437,12 +437,9 @@ export default function Overlay() {
           {/* 03 · Capabilities & Skills */}
           {sectionIndex === 3 && (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
-              <SkillColumn
-                title="Frontend & Mobile"
-                items={portfolioData.capabilities.frontendAndMobile}
-              />
-              <SkillColumn title="Backend" items={portfolioData.capabilities.backend} />
-              <SkillColumn title="Tools" items={portfolioData.capabilities.tools} />
+              {portfolioData.skills.map((group) => (
+                <SkillColumn key={group.title} title={group.title} items={group.skills} />
+              ))}
             </div>
           )}
 
@@ -450,15 +447,17 @@ export default function Overlay() {
           {sectionIndex === 4 && (
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                {portfolioData.about.headline}
+                {portfolioData.about.heading}
               </h2>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-300">
-                {portfolioData.about.bio}
-              </p>
+              <div className="mt-5 max-w-2xl space-y-3 text-base leading-relaxed text-zinc-300">
+                {portfolioData.about.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
               <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-zinc-800 pt-5 sm:grid-cols-3">
-                <Fact label="Location" value={portfolioData.profile.location} />
-                <Fact label="Core stack" value="Next.js, React, Expo" />
-                <Fact label="Status" value={portfolioData.profile.status} />
+                {portfolioData.about.facts.map((fact) => (
+                  <Fact key={fact.label} label={fact.label} value={fact.value} />
+                ))}
               </dl>
             </div>
           )}
@@ -467,8 +466,7 @@ export default function Overlay() {
           {sectionIndex === 5 && (
             <div>
               <p className="max-w-lg text-base leading-relaxed text-zinc-400">
-                Open to frontend engineering roles, Next.js and React Native builds,
-                and collaborations.
+                {portfolioData.contact.description}
               </p>
               <a
                 href={`mailto:${portfolioData.profile.email}`}

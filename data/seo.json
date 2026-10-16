@@ -1,0 +1,34 @@
+{
+  "siteUrl": "https://novodip.netlify.app",
+  "siteName": "Novodip",
+  "title": "Novodip — Frontend Developer (React & Next.js)",
+  "description": "Novodip is a frontend developer in Dhaka, Bangladesh specializing in React, Next.js, and React Native — building fast, scalable web and mobile applications.",
+  "keywords": [
+    "Novodip",
+    "Frontend Developer",
+    "React Developer",
+    "Next.js Developer",
+    "React Native Developer",
+    "Expo",
+    "TypeScript",
+    "Tailwind CSS",
+    "Web Performance",
+    "Dhaka",
+    "Bangladesh",
+    "Portfolio"
+  ],
+  "person": {
+    "jobTitle": "Frontend Developer",
+    "image": "/portfolio-avatar.png",
+    "locality": "Dhaka",
+    "country": "BD",
+    "knowsAbout": [
+      "Frontend Development",
+      "React",
+      "Next.js",
+      "React Native",
+      "TypeScript",
+      "Web Performance"
+    ]
+  }
+}

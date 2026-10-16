@@ -1,3 +1,37 @@
+/**
+ * Portfolio content lives in the JSON files next to this module — edit those,
+ * not this file:
+ *
+ *   profile.json     name, title, tagline, location, status, email, socials
+ *   experience.json  jobs (role, company, period, description bullets)
+ *   projects.json    filter categories + projects (links, stack, preview images)
+ *   skills.json      skill groups shown on the Capabilities floor
+ *   about.json       About floor heading, paragraphs and facts
+ *   contact.json     Contact floor blurb
+ *   seo.json         page title, description, keywords, structured data
+ *
+ * Everything is validated at build time, so a typo in the JSON fails
+ * `next build` with a message naming the file and field instead of
+ * shipping a broken page.
+ */
+import profileJson from "./profile.json";
+import experienceJson from "./experience.json";
+import projectsJson from "./projects.json";
+import skillsJson from "./skills.json";
+import aboutJson from "./about.json";
+import contactJson from "./contact.json";
+import seoJson from "./seo.json";
+
+export interface Profile {
+  name: string;
+  title: string;
+  tagline: string;
+  location: string;
+  status: string;
+  email: string;
+  socials: { github: string; linkedin: string; resume: string };
+}
+
 export interface ExperienceItem {
   period: string;
   role: string;
@@ -5,7 +39,7 @@ export interface ExperienceItem {
   highlights: string[];
 }
 
-export type ProjectCategory = "Featured" | "Mobile" | "Web Apps" | "Client Work";
+export type ProjectCategory = string;
 
 /**
  * Hover preview for the Selected Work floor:
@@ -34,23 +68,210 @@ export interface ProjectItem {
   demoUrl?: string;
 }
 
-export const PROJECT_CATEGORIES: ("All" | ProjectCategory)[] = [
-  "All",
-  "Featured",
-  "Mobile",
-  "Web Apps",
-  "Client Work"
-];
+export interface SkillGroup {
+  title: string;
+  skills: string[];
+}
 
-const web = (id: string, title: string): ProjectPreview => ({
-  kind: "web",
-  images: [{ src: `/projects/${id}.webp`, alt: `${title} website screenshot` }]
-});
+export interface AboutContent {
+  heading: string;
+  paragraphs: string[];
+  facts: { label: string; value: string }[];
+}
 
-const mobile = (id: string, alts: [string, string, string]): ProjectPreview => ({
-  kind: "mobile",
-  images: alts.map((alt, i) => ({ src: `/projects/${id}-${i + 1}.webp`, alt }))
-});
+export interface SeoContent {
+  siteUrl: string;
+  siteName: string;
+  title: string;
+  description: string;
+  keywords: string[];
+  person: {
+    jobTitle: string;
+    image: string;
+    locality: string;
+    country: string;
+    knowsAbout: string[];
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* JSON validation                                                     */
+/* ------------------------------------------------------------------ */
+
+type Json = Record<string, unknown>;
+
+function fail(where: string, message: string): never {
+  throw new Error(`[data] ${where}: ${message}`);
+}
+
+function obj(value: unknown, where: string): Json {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    fail(where, "must be an object");
+  }
+  return value as Json;
+}
+
+function str(value: unknown, where: string): string {
+  if (typeof value !== "string" || value.trim() === "") {
+    fail(where, "must be a non-empty string");
+  }
+  return value;
+}
+
+/** Optional links may be "" or missing in the JSON */
+function optionalUrl(value: unknown, where: string): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  return str(value, where);
+}
+
+function list<T>(
+  value: unknown,
+  where: string,
+  item: (v: unknown, w: string) => T
+): T[] {
+  if (!Array.isArray(value)) fail(where, "must be an array");
+  return value.map((v, i) => item(v, `${where}[${i}]`));
+}
+
+function parseProfile(raw: unknown): Profile {
+  const f = "profile.json";
+  const p = obj(raw, f);
+  const socials = obj(p.socials, `${f} socials`);
+  return {
+    name: str(p.name, `${f} name`),
+    title: str(p.title, `${f} title`),
+    tagline: str(p.tagline, `${f} tagline`),
+    location: str(p.location, `${f} location`),
+    status: str(p.status, `${f} status`),
+    email: str(p.email, `${f} email`),
+    socials: {
+      github: str(socials.github, `${f} socials.github`),
+      linkedin: str(socials.linkedin, `${f} socials.linkedin`),
+      resume: str(socials.resume, `${f} socials.resume`)
+    }
+  };
+}
+
+function parseExperience(raw: unknown): ExperienceItem[] {
+  const f = "experience.json";
+  return list(obj(raw, f).experiences, `${f} experiences`, (v, w) => {
+    const e = obj(v, w);
+    return {
+      role: str(e.role, `${w}.role`),
+      company: str(e.company, `${w}.company`),
+      period: str(e.period, `${w}.period`),
+      highlights: list(e.description, `${w}.description`, str)
+    };
+  });
+}
+
+function parseProjects(raw: unknown): {
+  categories: string[];
+  projects: ProjectItem[];
+} {
+  const f = "projects.json";
+  const root = obj(raw, f);
+  const categories = list(root.categories, `${f} categories`, str);
+  const seen = new Set<string>();
+
+  const projects = list(root.projects, `${f} projects`, (v, w) => {
+    const p = obj(v, w);
+    const id = str(p.id, `${w}.id`);
+    if (seen.has(id)) fail(f, `duplicate project id "${id}"`);
+    seen.add(id);
+
+    const category = str(p.category, `${w}.category`);
+    if (!categories.includes(category)) {
+      fail(
+        w,
+        `(${id}) has category "${category}" — add it to "categories" or use one of: ${categories.join(", ")}`
+      );
+    }
+
+    const preview = obj(p.preview, `${w}.preview`);
+    const kind = preview.kind;
+    if (kind !== "web" && kind !== "mobile") {
+      fail(`${w}.preview.kind`, `(${id}) must be "web" or "mobile"`);
+    }
+    const images = list(preview.images, `${w}.preview.images`, (img, iw) => {
+      const o = obj(img, iw);
+      return { src: str(o.src, `${iw}.src`), alt: str(o.alt, `${iw}.alt`) };
+    });
+    if (kind === "web" && images.length < 1) {
+      fail(`${w}.preview`, `(${id}) needs at least 1 image for a web preview`);
+    }
+    if (kind === "mobile" && images.length !== 3) {
+      fail(`${w}.preview`, `(${id}) needs exactly 3 phone screens for a mobile preview`);
+    }
+
+    return {
+      id,
+      title: str(p.title, `${w}.title`),
+      tag: str(p.tag, `${w}.tag`),
+      category,
+      description: str(p.description, `${w}.description`),
+      stack: list(p.stack, `${w}.stack`, str),
+      preview: { kind: kind as ProjectPreview["kind"], images },
+      liveUrl: optionalUrl(p.live, `${w}.live`),
+      frontendUrl: optionalUrl(p.frontend, `${w}.frontend`),
+      backendUrl: optionalUrl(p.backend, `${w}.backend`),
+      demoUrl: optionalUrl(p.demo, `${w}.demo`)
+    };
+  });
+
+  return { categories, projects };
+}
+
+function parseSkills(raw: unknown): SkillGroup[] {
+  const f = "skills.json";
+  return list(obj(raw, f).groups, `${f} groups`, (v, w) => {
+    const g = obj(v, w);
+    return {
+      title: str(g.title, `${w}.title`),
+      skills: list(g.skills, `${w}.skills`, str)
+    };
+  });
+}
+
+function parseAbout(raw: unknown): AboutContent {
+  const f = "about.json";
+  const a = obj(raw, f);
+  return {
+    heading: str(a.heading, `${f} heading`),
+    paragraphs: list(a.paragraphs, `${f} paragraphs`, str),
+    facts: list(a.facts, `${f} facts`, (v, w) => {
+      const o = obj(v, w);
+      return { label: str(o.label, `${w}.label`), value: str(o.value, `${w}.value`) };
+    })
+  };
+}
+
+function parseSeo(raw: unknown): SeoContent {
+  const f = "seo.json";
+  const s = obj(raw, f);
+  const person = obj(s.person, `${f} person`);
+  return {
+    siteUrl: str(s.siteUrl, `${f} siteUrl`),
+    siteName: str(s.siteName, `${f} siteName`),
+    title: str(s.title, `${f} title`),
+    description: str(s.description, `${f} description`),
+    keywords: list(s.keywords, `${f} keywords`, str),
+    person: {
+      jobTitle: str(person.jobTitle, `${f} person.jobTitle`),
+      image: str(person.image, `${f} person.image`),
+      locality: str(person.locality, `${f} person.locality`),
+      country: str(person.country, `${f} person.country`),
+      knowsAbout: list(person.knowsAbout, `${f} person.knowsAbout`, str)
+    }
+  };
+}
+
+const parsedProjects = parseProjects(projectsJson);
+
+/** Filter tabs on the Selected Work floor */
+export const PROJECT_CATEGORIES: string[] = ["All", ...parsedProjects.categories];
+
+export const seoData: SeoContent = parseSeo(seoJson);
 
 export interface SiloLevelConfig {
   index: number;
@@ -153,273 +374,15 @@ export const SILO_GEOMETRY = {
 } as const;
 
 export const portfolioData = {
-  profile: {
-    name: "Novodip",
-    title: "Frontend Developer / React & Next.js Specialist",
-    tagline:
-      "Building fast, scalable, and elegant web applications with modern technologies.",
-    location: "Dhaka, BD / 2026",
-    email: "neptune.navo@gmail.com",
-    status: "Available for work",
-    socials: {
-      github: "https://github.com/Novo1999",
-      linkedin: "https://www.linkedin.com/in/novodip/",
-      resume: "/resume.pdf"
-    }
-  },
-  experience: [
-    {
-      period: "2025 — 2026",
-      role: "Junior Software Engineer (Frontend)",
-      company: "Dhrubok Infotech Services Ltd.",
-      highlights: [
-        "Designed and developed the TaskaTask Admin Panel using Next.js.",
-        "Built the TaskaTask mobile application using Expo and React Native.",
-        "Implemented state management with Redux for scalable mobile architecture."
-      ]
-    },
-    {
-      period: "2024 — 2025",
-      role: "Junior Frontend Developer (Remote)",
-      company: "Wensyve",
-      highlights: [
-        "Built scalable web applications with Next.js and React.",
-        "Focused on performance optimization and clean architecture.",
-        "Delivered polished and responsive user experiences for clients."
-      ]
-    }
-  ] as ExperienceItem[],
-  projects: [
-    {
-      id: "docuflash",
-      title: "Docuflash",
-      tag: "Featured",
-      category: "Featured",
-      description:
-        "Instant, no-signup file sharing — upload PDFs, docs, and archives to get shareable links in seconds, with password protection and auto-expiry.",
-      stack: [
-        "Next.js 16",
-        "React 19",
-        "Tailwind v4",
-        "HeroUI",
-        "UploadThing",
-        "TypeScript"
-      ],
-      preview: web("docuflash", "Docuflash"),
-      liveUrl: "https://docuflash-frontend.vercel.app/",
-      frontendUrl: "https://github.com/Novo1999/docuflash-frontend",
-      backendUrl: "https://github.com/Novo1999/Docuflash-Backend"
-    },
-    {
-      id: "docuflash-mobile",
-      title: "Docuflash Mobile",
-      tag: "Mobile / Expo",
-      category: "Mobile",
-      description:
-        "The React Native companion to Docuflash — pick up to 5 files, lock them behind a password, and hand out encrypted links that self-delete after 1 hour to 30 days. Native Google Sign-In, secure session storage, and light/dark theming.",
-      stack: [
-        "Expo SDK 56",
-        "React Native",
-        "React 19",
-        "Expo Router",
-        "UploadThing",
-        "TypeScript"
-      ],
-      preview: mobile("docuflash-mobile", [
-        "Docuflash Mobile upload screen",
-        "Docuflash Mobile uploads list",
-        "Docuflash Mobile profile screen"
-      ]),
-      frontendUrl: "https://github.com/Novo1999/docuflash-mobile",
-      backendUrl: "https://github.com/Novo1999/Docuflash-Backend"
-    },
-    {
-      id: "moneymate",
-      title: "Moneymate",
-      tag: "Featured",
-      category: "Featured",
-      description:
-        "A modern finance platform built with Next.js, Tailwind, PostgreSQL and Express to manage your personal financial transaction history.",
-      stack: ["Next.js", "React", "Tailwind", "Express.js", "PostgreSQL"],
-      preview: web("moneymate", "Moneymate"),
-      liveUrl: "https://moneymatefinance.vercel.app/",
-      frontendUrl: "https://github.com/Novo1999/moneymate-frontend",
-      backendUrl: "https://github.com/Novo1999/moneymate-backend"
-    },
-    {
-      id: "moneymate-mobile",
-      title: "MoneyMate Mobile",
-      tag: "Mobile / Expo",
-      category: "Mobile",
-      description:
-        "The native client for MoneyMate, sharing the web app's backend and API contracts. Balance hero and category spending donut, day-grouped transactions with filters, account cards with transfers, and native Google sign-in with tokens in secure storage.",
-      stack: [
-        "Expo SDK 56",
-        "React Native",
-        "React 19",
-        "Expo Router",
-        "Jotai",
-        "TypeScript"
-      ],
-      preview: mobile("moneymate-mobile", [
-        "MoneyMate Mobile transactions list, filtered and grouped by day",
-        "MoneyMate Mobile dashboard with balance hero and spending donut",
-        "MoneyMate Mobile accounts screen showing net worth"
-      ]),
-      frontendUrl: "https://github.com/Novo1999/moneymate-mobile",
-      backendUrl: "https://github.com/Novo1999/moneymate-backend"
-    },
-    {
-      id: "taskatask",
-      title: "TaskaTask",
-      tag: "Enterprise Mobile",
-      category: "Mobile",
-      description:
-        "A field-service mobile app built at Dhrubok Infotech — in-app chat, live maps & geolocation, and task scheduling. Shipped with Expo & React Native, state managed with Redux.",
-      stack: ["React Native", "Expo", "Redux Toolkit", "TypeScript"],
-      preview: mobile("taskatask", [
-        "TaskaTask in-app chat",
-        "TaskaTask live map",
-        "TaskaTask create task screen"
-      ]),
-      demoUrl: "https://www.youtube.com/watch?v=K2l2Umhyirk"
-    },
-    {
-      id: "resumefeed",
-      title: "ResumeFeed",
-      tag: "Fullstack",
-      category: "Web Apps",
-      description:
-        "A resume feedback network — post a resume to a shared feed and get a 1–5 star rating, quick reactions, and Reddit-style threaded comments. A Turborepo monorepo pairing a Next.js app with an Express/TypeORM API on Supabase Auth and Postgres.",
-      stack: [
-        "Next.js 16",
-        "React 19",
-        "Turborepo",
-        "Supabase Auth",
-        "Express",
-        "PostgreSQL"
-      ],
-      preview: web("resumefeed", "ResumeFeed"),
-      liveUrl: "https://resumefeed-web.vercel.app/",
-      frontendUrl: "https://github.com/Novo1999/resume-feed"
-    },
-    {
-      id: "chesspacito",
-      title: "Chesspacito",
-      tag: "Realtime Game",
-      category: "Web Apps",
-      description:
-        "Realtime 2v2 chess — two players per side command one army, alternating turns. No backend at all: Firebase security rules referee every move, alongside seat claiming, team clocks, and a 3,800-position openings database.",
-      stack: [
-        "React 18",
-        "TypeScript",
-        "Vite",
-        "Firebase RTDB",
-        "chess.js",
-        "Base UI"
-      ],
-      preview: web("chesspacito", "Chesspacito"),
-      liveUrl: "https://chesspacito.web.app/",
-      frontendUrl: "https://github.com/Novo1999/2v2-chess"
-    },
-    {
-      id: "flowboard",
-      title: "Flowboard",
-      tag: "Fullstack",
-      category: "Web Apps",
-      description:
-        "A Kanban-style task management system with drag-and-drop workflow management and a full-stack architecture.",
-      stack: ["React", "Tailwind", "Node.js", "MongoDB"],
-      preview: web("flowboard", "Flowboard"),
-      liveUrl: "https://kanban-novo-frontend.vercel.app/",
-      frontendUrl: "https://github.com/Novo1999/Kanban-Frontend",
-      backendUrl: "https://github.com/Novo1999/Kanban-Backend"
-    },
-    {
-      id: "kartigo",
-      title: "Kartigo",
-      tag: "E-commerce",
-      category: "Web Apps",
-      description:
-        "A full-stack e-commerce platform with product browsing, shopping workflows, and backend services powered by MongoDB.",
-      stack: ["Next.js", "React", "Tailwind", "MongoDB"],
-      preview: web("kartigo", "Kartigo"),
-      liveUrl: "https://kartigo.vercel.app/",
-      frontendUrl: "https://github.com/Novo1999/kartigo-nextt"
-    },
-    {
-      id: "remotejumbo",
-      title: "RemoteJumbo",
-      tag: "Fullstack",
-      category: "Web Apps",
-      description:
-        "A remote job listing platform built with a full-stack architecture enabling job discovery and posting workflows.",
-      stack: ["Next.js", "React", "Tailwind", "Node.js", "MongoDB"],
-      preview: web("remotejumbo", "RemoteJumbo"),
-      liveUrl: "https://remotejumbo.vercel.app/",
-      frontendUrl: "https://github.com/Novo1999/Remote-Job",
-      backendUrl: "https://github.com/Novo1999/RemoteJumbo---Backend"
-    },
-    {
-      id: "upliftt",
-      title: "Upliftt",
-      tag: "Client Work",
-      category: "Client Work",
-      description:
-        "A modern web platform built with Next.js and Tailwind focused on clean UI and performance-driven frontend architecture.",
-      stack: ["Next.js", "React", "Tailwind"],
-      preview: web("upliftt", "Upliftt"),
-      liveUrl: "https://novodip.vercel.app/projects/uplift"
-    },
-    {
-      id: "clinician",
-      title: "The Clinician",
-      tag: "Client Work",
-      category: "Client Work",
-      description:
-        "A healthcare-focused web platform delivering medical resources and information with a fast and responsive Next.js frontend.",
-      stack: ["Next.js", "React", "Tailwind"],
-      preview: web("clinician", "The Clinician"),
-      liveUrl: "https://theclinician.org/en"
-    },
-    {
-      id: "bin-mahmud",
-      title: "Bin Mahmud",
-      tag: "Client Work",
-      category: "Client Work",
-      description:
-        "E-commerce website built with Next.js featuring multilingual support and a modern responsive UI.",
-      stack: ["Next.js", "React", "Tailwind"],
-      preview: web("bin-mahmud", "Bin Mahmud"),
-      liveUrl: "https://binmahmud.com/en"
-    },
-    {
-      id: "mediverse",
-      title: "Mediverse",
-      tag: "Client Work",
-      category: "Client Work",
-      description:
-        "Medical services platform built with Next.js emphasizing responsive design, usability, and optimized frontend performance.",
-      stack: ["Next.js", "React", "Tailwind"],
-      preview: web("mediverse", "Mediverse"),
-      liveUrl: "https://mediversebd.com/"
-    }
-  ] as ProjectItem[],
-  capabilities: {
-    frontendAndMobile: [
-      "React",
-      "Next.js",
-      "React Native",
-      "Expo",
-      "TypeScript",
-      "Tailwind CSS",
-      "Redux Toolkit"
-    ],
-    backend: ["Node.js", "Express.js", "MongoDB", "REST APIs", "PostgreSQL"],
-    tools: ["Git", "Docker", "Vercel"]
-  },
-  about: {
-    headline: "Crafting digital experiences with precision.",
-    bio: "I'm a frontend developer focused on building modern web and mobile applications that are fast, accessible, and thoughtfully designed. I primarily work with Next.js, React, React Native, TypeScript, and Tailwind CSS to create responsive interfaces and smooth user experiences across platforms. Beyond the interface, I also have experience with Node.js and PostgreSQL, valuing clean architecture, performance, and maintainable code."
+  profile: parseProfile(profileJson),
+  experience: parseExperience(experienceJson),
+  projects: parsedProjects.projects,
+  skills: parseSkills(skillsJson),
+  about: parseAbout(aboutJson),
+  contact: {
+    description: str(
+      obj(contactJson, "contact.json").description,
+      "contact.json description"
+    )
   }
 };

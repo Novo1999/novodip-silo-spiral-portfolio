@@ -1,0 +1,406 @@
+{
+  "categories": [
+    "Featured",
+    "Mobile",
+    "Web Apps",
+    "Client Work"
+  ],
+  "projects": [
+    {
+      "id": "docuflash",
+      "title": "Docuflash",
+      "tag": "Featured",
+      "category": "Featured",
+      "description": "Instant, no-signup file sharing — upload PDFs, docs, and archives to get shareable links in seconds, with password protection and auto-expiry.",
+      "stack": [
+        "Next.js 16",
+        "React 19",
+        "Tailwind v4",
+        "HeroUI",
+        "UploadThing",
+        "TypeScript"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/docuflash.webp",
+            "alt": "Docuflash website screenshot"
+          }
+        ]
+      },
+      "live": "https://docuflash-frontend.vercel.app/",
+      "frontend": "https://github.com/Novo1999/docuflash-frontend",
+      "backend": "https://github.com/Novo1999/Docuflash-Backend",
+      "demo": ""
+    },
+    {
+      "id": "docuflash-mobile",
+      "title": "Docuflash Mobile",
+      "tag": "Mobile / Expo",
+      "category": "Mobile",
+      "description": "The React Native companion to Docuflash — pick up to 5 files, lock them behind a password, and hand out encrypted links that self-delete after 1 hour to 30 days. Native Google Sign-In, secure session storage, and light/dark theming.",
+      "stack": [
+        "Expo SDK 56",
+        "React Native",
+        "React 19",
+        "Expo Router",
+        "UploadThing",
+        "TypeScript"
+      ],
+      "preview": {
+        "kind": "mobile",
+        "images": [
+          {
+            "src": "/projects/docuflash-mobile-1.webp",
+            "alt": "Docuflash Mobile upload screen"
+          },
+          {
+            "src": "/projects/docuflash-mobile-2.webp",
+            "alt": "Docuflash Mobile uploads list"
+          },
+          {
+            "src": "/projects/docuflash-mobile-3.webp",
+            "alt": "Docuflash Mobile profile screen"
+          }
+        ]
+      },
+      "live": "",
+      "frontend": "https://github.com/Novo1999/docuflash-mobile",
+      "backend": "https://github.com/Novo1999/Docuflash-Backend",
+      "demo": ""
+    },
+    {
+      "id": "moneymate",
+      "title": "Moneymate",
+      "tag": "Featured",
+      "category": "Featured",
+      "description": "A modern finance platform built with Next.js, Tailwind, PostgreSQL and Express to manage your personal financial transaction history.",
+      "stack": [
+        "Next.js",
+        "React",
+        "Tailwind",
+        "Express.js",
+        "PostgreSQL"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/moneymate.webp",
+            "alt": "Moneymate website screenshot"
+          }
+        ]
+      },
+      "live": "https://moneymatefinance.vercel.app/",
+      "frontend": "https://github.com/Novo1999/moneymate-frontend",
+      "backend": "https://github.com/Novo1999/moneymate-backend",
+      "demo": ""
+    },
+    {
+      "id": "moneymate-mobile",
+      "title": "MoneyMate Mobile",
+      "tag": "Mobile / Expo",
+      "category": "Mobile",
+      "description": "The native client for MoneyMate, sharing the web app's backend and API contracts. Balance hero and category spending donut, day-grouped transactions with filters, account cards with transfers, and native Google sign-in with tokens in secure storage.",
+      "stack": [
+        "Expo SDK 56",
+        "React Native",
+        "React 19",
+        "Expo Router",
+        "Jotai",
+        "TypeScript"
+      ],
+      "preview": {
+        "kind": "mobile",
+        "images": [
+          {
+            "src": "/projects/moneymate-mobile-1.webp",
+            "alt": "MoneyMate Mobile transactions list, filtered and grouped by day"
+          },
+          {
+            "src": "/projects/moneymate-mobile-2.webp",
+            "alt": "MoneyMate Mobile dashboard with balance hero and spending donut"
+          },
+          {
+            "src": "/projects/moneymate-mobile-3.webp",
+            "alt": "MoneyMate Mobile accounts screen showing net worth"
+          }
+        ]
+      },
+      "live": "",
+      "frontend": "https://github.com/Novo1999/moneymate-mobile",
+      "backend": "https://github.com/Novo1999/moneymate-backend",
+      "demo": ""
+    },
+    {
+      "id": "taskatask",
+      "title": "TaskaTask",
+      "tag": "Enterprise Mobile",
+      "category": "Mobile",
+      "description": "A field-service mobile app built at Dhrubok Infotech — in-app chat, live maps & geolocation, and task scheduling. Shipped with Expo & React Native, state managed with Redux.",
+      "stack": [
+        "React Native",
+        "Expo",
+        "Redux Toolkit",
+        "TypeScript"
+      ],
+      "preview": {
+        "kind": "mobile",
+        "images": [
+          {
+            "src": "/projects/taskatask-1.webp",
+            "alt": "TaskaTask in-app chat"
+          },
+          {
+            "src": "/projects/taskatask-2.webp",
+            "alt": "TaskaTask live map"
+          },
+          {
+            "src": "/projects/taskatask-3.webp",
+            "alt": "TaskaTask create task screen"
+          }
+        ]
+      },
+      "live": "",
+      "frontend": "",
+      "backend": "",
+      "demo": "https://www.youtube.com/watch?v=K2l2Umhyirk"
+    },
+    {
+      "id": "resumefeed",
+      "title": "ResumeFeed",
+      "tag": "Fullstack",
+      "category": "Web Apps",
+      "description": "A resume feedback network — post a resume to a shared feed and get a 1–5 star rating, quick reactions, and Reddit-style threaded comments. A Turborepo monorepo pairing a Next.js app with an Express/TypeORM API on Supabase Auth and Postgres.",
+      "stack": [
+        "Next.js 16",
+        "React 19",
+        "Turborepo",
+        "Supabase Auth",
+        "Express",
+        "PostgreSQL"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/resumefeed.webp",
+            "alt": "ResumeFeed website screenshot"
+          }
+        ]
+      },
+      "live": "https://resumefeed-web.vercel.app/",
+      "frontend": "https://github.com/Novo1999/resume-feed",
+      "backend": "",
+      "demo": ""
+    },
+    {
+      "id": "chesspacito",
+      "title": "Chesspacito",
+      "tag": "Realtime Game",
+      "category": "Web Apps",
+      "description": "Realtime 2v2 chess — two players per side command one army, alternating turns. No backend at all: Firebase security rules referee every move, alongside seat claiming, team clocks, and a 3,800-position openings database.",
+      "stack": [
+        "React 18",
+        "TypeScript",
+        "Vite",
+        "Firebase RTDB",
+        "chess.js",
+        "Base UI"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/chesspacito.webp",
+            "alt": "Chesspacito website screenshot"
+          }
+        ]
+      },
+      "live": "https://chesspacito.web.app/",
+      "frontend": "https://github.com/Novo1999/2v2-chess",
+      "backend": "",
+      "demo": ""
+    },
+    {
+      "id": "flowboard",
+      "title": "Flowboard",
+      "tag": "Fullstack",
+      "category": "Web Apps",
+      "description": "A Kanban-style task management system with drag-and-drop workflow management and a full-stack architecture.",
+      "stack": [
+        "React",
+        "Tailwind",
+        "Node.js",
+        "MongoDB"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/flowboard.webp",
+            "alt": "Flowboard website screenshot"
+          }
+        ]
+      },
+      "live": "https://kanban-novo-frontend.vercel.app/",
+      "frontend": "https://github.com/Novo1999/Kanban-Frontend",
+      "backend": "https://github.com/Novo1999/Kanban-Backend",
+      "demo": ""
+    },
+    {
+      "id": "kartigo",
+      "title": "Kartigo",
+      "tag": "E-commerce",
+      "category": "Web Apps",
+      "description": "A full-stack e-commerce platform with product browsing, shopping workflows, and backend services powered by MongoDB.",
+      "stack": [
+        "Next.js",
+        "React",
+        "Tailwind",
+        "MongoDB"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/kartigo.webp",
+            "alt": "Kartigo website screenshot"
+          }
+        ]
+      },
+      "live": "https://kartigo.vercel.app/",
+      "frontend": "https://github.com/Novo1999/kartigo-nextt",
+      "backend": "",
+      "demo": ""
+    },
+    {
+      "id": "remotejumbo",
+      "title": "RemoteJumbo",
+      "tag": "Fullstack",
+      "category": "Web Apps",
+      "description": "A remote job listing platform built with a full-stack architecture enabling job discovery and posting workflows.",
+      "stack": [
+        "Next.js",
+        "React",
+        "Tailwind",
+        "Node.js",
+        "MongoDB"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/remotejumbo.webp",
+            "alt": "RemoteJumbo website screenshot"
+          }
+        ]
+      },
+      "live": "https://remotejumbo.vercel.app/",
+      "frontend": "https://github.com/Novo1999/Remote-Job",
+      "backend": "https://github.com/Novo1999/RemoteJumbo---Backend",
+      "demo": ""
+    },
+    {
+      "id": "upliftt",
+      "title": "Upliftt",
+      "tag": "Client Work",
+      "category": "Client Work",
+      "description": "A modern web platform built with Next.js and Tailwind focused on clean UI and performance-driven frontend architecture.",
+      "stack": [
+        "Next.js",
+        "React",
+        "Tailwind"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/upliftt.webp",
+            "alt": "Upliftt website screenshot"
+          }
+        ]
+      },
+      "live": "https://novodip.vercel.app/projects/uplift",
+      "frontend": "",
+      "backend": "",
+      "demo": ""
+    },
+    {
+      "id": "clinician",
+      "title": "The Clinician",
+      "tag": "Client Work",
+      "category": "Client Work",
+      "description": "A healthcare-focused web platform delivering medical resources and information with a fast and responsive Next.js frontend.",
+      "stack": [
+        "Next.js",
+        "React",
+        "Tailwind"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/clinician.webp",
+            "alt": "The Clinician website screenshot"
+          }
+        ]
+      },
+      "live": "https://theclinician.org/en",
+      "frontend": "",
+      "backend": "",
+      "demo": ""
+    },
+    {
+      "id": "bin-mahmud",
+      "title": "Bin Mahmud",
+      "tag": "Client Work",
+      "category": "Client Work",
+      "description": "E-commerce website built with Next.js featuring multilingual support and a modern responsive UI.",
+      "stack": [
+        "Next.js",
+        "React",
+        "Tailwind"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/bin-mahmud.webp",
+            "alt": "Bin Mahmud website screenshot"
+          }
+        ]
+      },
+      "live": "https://binmahmud.com/en",
+      "frontend": "",
+      "backend": "",
+      "demo": ""
+    },
+    {
+      "id": "mediverse",
+      "title": "Mediverse",
+      "tag": "Client Work",
+      "category": "Client Work",
+      "description": "Medical services platform built with Next.js emphasizing responsive design, usability, and optimized frontend performance.",
+      "stack": [
+        "Next.js",
+        "React",
+        "Tailwind"
+      ],
+      "preview": {
+        "kind": "web",
+        "images": [
+          {
+            "src": "/projects/mediverse.webp",
+            "alt": "Mediverse website screenshot"
+          }
+        ]
+      },
+      "live": "https://mediversebd.com/",
+      "frontend": "",
+      "backend": "",
+      "demo": ""
+    }
+  ]
+}

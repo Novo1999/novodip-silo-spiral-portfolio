@@ -1,0 +1,20 @@
+{
+  "heading": "Crafting digital experiences with precision.",
+  "paragraphs": [
+    "I'm a frontend developer focused on building modern web and mobile applications that are fast, accessible, and thoughtfully designed. I primarily work with Next.js, React, React Native, TypeScript, and Tailwind CSS to create responsive interfaces and smooth user experiences across platforms. Beyond the interface, I also have experience with Node.js and PostgreSQL, valuing clean architecture, performance, and maintainable code."
+  ],
+  "facts": [
+    {
+      "label": "Location",
+      "value": "Dhaka, BD / 2026"
+    },
+    {
+      "label": "Core stack",
+      "value": "Next.js, React, Expo"
+    },
+    {
+      "label": "Status",
+      "value": "Available for work"
+    }
+  ]
+}

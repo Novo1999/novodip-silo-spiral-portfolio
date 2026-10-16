@@ -24,6 +24,7 @@ const eyebrow =
 export default function Overlay() {
   const {
     currentStepIndex,
+    displayedStepIndex,
     isTransitioning,
     isPanelOpen,
     loopNavigation,
@@ -44,6 +45,10 @@ export default function Overlay() {
   const [hoveredProject, setHoveredProject] = useState<ProjectItem | null>(null);
 
   const currentLevel = SILO_LEVELS[currentStepIndex];
+  // the portal's section only switches after the camera arrives
+  const sectionIndex = displayedStepIndex;
+  const sectionLevel = SILO_LEVELS[sectionIndex];
+  const sectionAccent = sectionLevel.accentColor;
   // Stage 2: the black portal only opens once the camera has arrived at the floor
   const shutterOpen = isPanelOpen && !isTransitioning;
   const last = SILO_LEVELS.length - 1;
@@ -63,7 +68,7 @@ export default function Overlay() {
   // Warm the cache for the hover previews once the Selected Work floor is reached
   const preloadedRef = useRef(false);
   useEffect(() => {
-    if (currentStepIndex !== 2 || preloadedRef.current) return;
+    if (sectionIndex !== 2 || preloadedRef.current) return;
     preloadedRef.current = true;
     portfolioData.projects.forEach((p) =>
       p.preview.images.forEach(({ src }) => {
@@ -71,11 +76,11 @@ export default function Overlay() {
         img.src = src;
       })
     );
-  }, [currentStepIndex]);
+  }, [sectionIndex]);
 
   useEffect(() => {
-    if (!shutterOpen || currentStepIndex !== 2) setHoveredProject(null);
-  }, [shutterOpen, currentStepIndex]);
+    if (!shutterOpen || sectionIndex !== 2) setHoveredProject(null);
+  }, [shutterOpen, sectionIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -276,35 +281,35 @@ export default function Overlay() {
           <div
             className="absolute inset-x-0 top-0 h-px"
             style={{
-              background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
-              boxShadow: `0 0 14px ${accent}`
+              background: `linear-gradient(90deg, transparent, ${sectionAccent}, transparent)`,
+              boxShadow: `0 0 14px ${sectionAccent}`
             }}
           />
           <div
             className="absolute inset-x-0 bottom-0 h-px"
             style={{
-              background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
-              boxShadow: `0 0 14px ${accent}`
+              background: `linear-gradient(90deg, transparent, ${sectionAccent}, transparent)`,
+              boxShadow: `0 0 14px ${sectionAccent}`
             }}
           />
 
           {/* section eyebrow */}
           <div className="mb-6 flex items-baseline justify-between gap-4">
             <p className={`${eyebrow} whitespace-nowrap`}>
-              <span style={{ color: accent }}>{currentLevel.label}</span>
+              <span style={{ color: sectionAccent }}>{sectionLevel.label}</span>
             </p>
             <p className="hidden min-w-0 text-right font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-400 md:block">
-              {currentLevel.subtitle}
+              {sectionLevel.subtitle}
             </p>
           </div>
 
           {/* 00 · Intro / Hero */}
-          {currentStepIndex === 0 && (
+          {sectionIndex === 0 && (
             <div>
               <p className={eyebrow}>
                 {portfolioData.profile.location}
                 <span className="mx-2 text-zinc-600">/</span>
-                <span style={{ color: accent }}>{portfolioData.profile.status}</span>
+                <span style={{ color: sectionAccent }}>{portfolioData.profile.status}</span>
               </p>
               <h2 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-6xl">
                 {portfolioData.profile.name}
@@ -333,7 +338,7 @@ export default function Overlay() {
           )}
 
           {/* 01 · Experience */}
-          {currentStepIndex === 1 && (
+          {sectionIndex === 1 && (
             <div className="divide-y divide-zinc-800">
               {portfolioData.experience.map((exp) => (
                 <div
@@ -359,7 +364,7 @@ export default function Overlay() {
           )}
 
           {/* 02 · Featured & Selected Work */}
-          {currentStepIndex === 2 && (
+          {sectionIndex === 2 && (
             <div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-zinc-800 pb-3 sm:gap-x-5">
                 {PROJECT_CATEGORIES.map((tag) => {
@@ -430,7 +435,7 @@ export default function Overlay() {
           )}
 
           {/* 03 · Capabilities & Skills */}
-          {currentStepIndex === 3 && (
+          {sectionIndex === 3 && (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
               <SkillColumn
                 title="Frontend & Mobile"
@@ -442,7 +447,7 @@ export default function Overlay() {
           )}
 
           {/* 04 · About Me */}
-          {currentStepIndex === 4 && (
+          {sectionIndex === 4 && (
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                 {portfolioData.about.headline}
@@ -459,7 +464,7 @@ export default function Overlay() {
           )}
 
           {/* 05 · Contact */}
-          {currentStepIndex === 5 && (
+          {sectionIndex === 5 && (
             <div>
               <p className="max-w-lg text-base leading-relaxed text-zinc-400">
                 Open to frontend engineering roles, Next.js and React Native builds,
@@ -486,7 +491,7 @@ export default function Overlay() {
 
       <ProjectHoverPreview
         project={hoveredProject}
-        accent={accent}
+        accent={sectionAccent}
         anchorRef={panelRef}
       />
     </div>

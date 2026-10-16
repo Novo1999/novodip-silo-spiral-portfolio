@@ -5,6 +5,12 @@ import { playSpatialStepSound } from "@/utils/sound";
 interface SiloState {
   currentStepIndex: number;
   previousStepIndex: number;
+  /**
+   * Floor whose section the portal shows. Lags behind currentStepIndex during
+   * a climb so the old section stays put while the shutter closes, and the
+   * new one only appears once the camera has arrived.
+   */
+  displayedStepIndex: number;
   isTransitioning: boolean;
   /**
    * Controls the "Black Shutter / Aperture Opening Up" section reveal:
@@ -28,6 +34,7 @@ interface SiloState {
 export const useSiloStore = create<SiloState>((set, get) => ({
   currentStepIndex: 0,
   previousStepIndex: 0,
+  displayedStepIndex: 0,
   isTransitioning: false,
   isPanelOpen: true,
   loopNavigation: true,
@@ -35,10 +42,11 @@ export const useSiloStore = create<SiloState>((set, get) => ({
   activeProjectFilter: "All",
 
   completeTransition: () =>
-    set({
+    set((state) => ({
       isTransitioning: false,
-      isPanelOpen: true
-    }),
+      isPanelOpen: true,
+      displayedStepIndex: state.currentStepIndex
+    })),
 
   setIsPanelOpen: (open) => set({ isPanelOpen: open }),
 

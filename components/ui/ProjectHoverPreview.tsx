@@ -37,7 +37,7 @@ export default function ProjectHoverPreview({
   project: ProjectItem | null;
   accent: string;
   /** The portal the preview parks beside */
-  anchorRef: React.RefObject<HTMLElement>;
+  anchorRef: React.RefObject<HTMLElement | null>;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const pointer = useRef({ x: 0, y: 0 });
@@ -251,15 +251,13 @@ export default function ProjectHoverPreview({
           />
 
           <div className="flex items-center justify-between gap-3 border-t border-zinc-800 px-3.5 py-2">
-            <span className="min-w-0 truncate whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.3em] text-zinc-400">
+            <span className="shrink-0 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.3em] text-zinc-400">
               <span style={{ color: accent }}>
                 PRJ // {String(index + 1).padStart(2, "0")}
               </span>
-              <span className="mx-2 text-zinc-600">/</span>
-              {shown.title}
             </span>
             {caption && (
-              <span className="min-w-0 shrink-[4] truncate font-mono text-[9px] tracking-[0.15em] text-zinc-500">
+              <span className="min-w-0 shrink-[4] truncate font-mono text-[11px] tracking-[0.15em] text-zinc-500">
                 {caption}
               </span>
             )}

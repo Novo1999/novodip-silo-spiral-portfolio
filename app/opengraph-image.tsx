@@ -2,8 +2,6 @@ import { ImageResponse } from "next/og";
 import { portfolioData, SILO_LEVELS } from "@/data/portfolio";
 import { SITE_URL } from "@/lib/site";
 
-export const runtime = "edge";
-
 export const alt = "Novodip — Frontend Developer (React & Next.js)";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

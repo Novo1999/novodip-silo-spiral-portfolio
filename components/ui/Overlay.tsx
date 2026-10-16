@@ -19,7 +19,7 @@ import { useSiloStore } from "@/store/useSiloStore";
 import ProjectHoverPreview from "@/components/ui/ProjectHoverPreview";
 
 const eyebrow =
-  "font-mono text-[10px] uppercase tracking-[0.32em] text-zinc-400";
+  "font-mono text-[11px] uppercase tracking-[0.28em] sm:text-[13px] text-zinc-400";
 
 export default function Overlay() {
   const {
@@ -134,13 +134,15 @@ export default function Overlay() {
       <div className="absolute left-6 top-6 sm:left-9 sm:top-8">
         <p className={eyebrow}>
           {currentLevel.code}
-          <span className="mx-2 text-zinc-600">/</span>
-          +{currentLevel.elevationMeters.toFixed(1)}m
+          <span className="hidden sm:inline">
+            <span className="mx-2 text-zinc-600">/</span>+
+            {currentLevel.elevationMeters.toFixed(1)}m
+          </span>
         </p>
-        <p className="mt-2 text-sm font-medium tracking-tight text-white">
+        <p className="mt-2 text-base font-medium tracking-tight text-white">
           {portfolioData.profile.name}
         </p>
-        <p className="text-[11px] text-zinc-400">{portfolioData.profile.title}</p>
+        <p className="text-[13px] text-zinc-400">{portfolioData.profile.title}</p>
       </div>
 
       {/* ---- Top-right: toggles (plain text) ---- */}
@@ -148,7 +150,7 @@ export default function Overlay() {
         <button
           type="button"
           onClick={() => setIsPanelOpen(!isPanelOpen)}
-          className={`${eyebrow} transition hover:text-white`}
+          className={`${eyebrow} hidden transition hover:text-white sm:inline`}
         >
           {isPanelOpen ? "Peek inside silo" : "Open floor section"}
         </button>
@@ -186,7 +188,7 @@ export default function Overlay() {
         className="group absolute left-1/2 top-5 flex -translate-x-1/2 flex-col items-center gap-1 text-zinc-400 transition hover:text-white disabled:opacity-25"
       >
         <ChevronUp className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
-        <span className={eyebrow}>
+        <span className={`${eyebrow} hidden sm:inline`}>
           {nextLevel ? `Ascend · ${nextLevel.shortTitle}` : "Top of silo"}
         </span>
       </button>
@@ -199,7 +201,7 @@ export default function Overlay() {
         aria-label={prevLevel ? `Descend to ${prevLevel.shortTitle}` : "Ground floor"}
         className="group absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-zinc-400 transition hover:text-white disabled:opacity-25"
       >
-        <span className={eyebrow}>
+        <span className={`${eyebrow} hidden sm:inline`}>
           {prevLevel ? `Descend · ${prevLevel.shortTitle}` : "Ground floor"}
         </span>
         <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
@@ -232,7 +234,7 @@ export default function Overlay() {
               className="group flex items-center gap-3 text-right"
             >
               <span
-                className={`font-mono text-[10px] tracking-[0.25em] transition ${
+                className={`font-mono text-[12px] tracking-[0.22em] transition ${
                   active
                     ? "text-white"
                     : "text-zinc-600 opacity-0 group-hover:opacity-100 group-hover:text-zinc-300"
@@ -241,7 +243,7 @@ export default function Overlay() {
                 {lvl.shortTitle}
               </span>
               <span
-                className={`font-mono text-[11px] transition ${
+                className={`font-mono text-[13px] transition ${
                   active ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
                 }`}
               >
@@ -264,7 +266,7 @@ export default function Overlay() {
         <div
           ref={panelRef}
           data-shutter={shutterOpen ? "open" : "closed"}
-          className={`relative w-full max-w-2xl origin-center overflow-hidden border border-zinc-700/50 bg-[#0d0703]/95 px-7 py-7 transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-10 sm:py-9 ${
+          className={`relative w-full max-w-3xl origin-center overflow-hidden border border-zinc-700/50 bg-[#0d0703]/95 px-7 py-7 transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-10 sm:py-9 ${
             shutterOpen
               ? "pointer-events-auto scale-y-100 opacity-100"
               : "pointer-events-none scale-y-0 opacity-0"
@@ -288,10 +290,12 @@ export default function Overlay() {
 
           {/* section eyebrow */}
           <div className="mb-6 flex items-baseline justify-between gap-4">
-            <p className={eyebrow}>
+            <p className={`${eyebrow} whitespace-nowrap`}>
               <span style={{ color: accent }}>{currentLevel.label}</span>
             </p>
-            <p className={`${eyebrow} hidden sm:block`}>{currentLevel.subtitle}</p>
+            <p className="hidden min-w-0 text-right font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-400 md:block">
+              {currentLevel.subtitle}
+            </p>
           </div>
 
           {/* 00 · Intro / Hero */}
@@ -305,10 +309,10 @@ export default function Overlay() {
               <h2 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-6xl">
                 {portfolioData.profile.name}
               </h2>
-              <p className="mt-2 text-base text-zinc-200 sm:text-lg">
+              <p className="mt-2 text-lg text-zinc-200 sm:text-xl">
                 {portfolioData.profile.title}
               </p>
-              <p className="mt-5 max-w-md text-sm leading-relaxed text-zinc-400">
+              <p className="mt-5 max-w-lg text-base leading-relaxed text-zinc-400">
                 {portfolioData.profile.tagline}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -334,13 +338,13 @@ export default function Overlay() {
               {portfolioData.experience.map((exp) => (
                 <div
                   key={exp.company}
-                  className="grid grid-cols-1 gap-3 py-5 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]"
+                  className="grid grid-cols-1 gap-3 py-5 first:pt-0 last:pb-0 sm:grid-cols-[9.5rem_1fr]"
                 >
-                  <p className={`${eyebrow} pt-1`}>{exp.period}</p>
+                  <p className={`${eyebrow} whitespace-nowrap pt-1`}>{exp.period}</p>
                   <div>
-                    <h3 className="text-base font-medium text-white">{exp.role}</h3>
-                    <p className="mt-0.5 text-sm text-zinc-400">{exp.company}</p>
-                    <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-zinc-300">
+                    <h3 className="text-lg font-medium text-white">{exp.role}</h3>
+                    <p className="mt-0.5 text-base text-zinc-400">{exp.company}</p>
+                    <ul className="mt-3 space-y-1.5 text-base leading-relaxed text-zinc-300">
                       {exp.highlights.map((h) => (
                         <li key={h} className="flex gap-3">
                           <span className="text-zinc-600">—</span>
@@ -357,7 +361,7 @@ export default function Overlay() {
           {/* 02 · Featured & Selected Work */}
           {currentStepIndex === 2 && (
             <div>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-zinc-800 pb-3">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-zinc-800 pb-3 sm:gap-x-5">
                 {PROJECT_CATEGORIES.map((tag) => {
                   const active = activeProjectFilter === tag;
                   return (
@@ -365,7 +369,7 @@ export default function Overlay() {
                       key={tag}
                       type="button"
                       onClick={() => setActiveProjectFilter(tag)}
-                      className={`font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400 -mb-[13px] border-b pb-3 transition ${
+                      className={`font-mono text-[11px] uppercase tracking-[0.2em] sm:text-[12px] text-zinc-400 border-b pb-1 transition sm:-mb-[13px] sm:pb-3 ${
                         active
                           ? "border-current text-white"
                           : "border-transparent hover:text-zinc-200"
@@ -378,7 +382,7 @@ export default function Overlay() {
               </div>
 
               <div
-                className="scrollable-area mt-1 max-h-[46vh] overflow-y-auto pr-2"
+                className="scrollable-area mt-1 max-h-[50vh] overflow-y-auto pr-2"
                 onMouseLeave={() => setHoveredProject(null)}
               >
                 <div className="divide-y divide-zinc-800">
@@ -389,16 +393,18 @@ export default function Overlay() {
                       onMouseEnter={() => setHoveredProject(project)}
                     >
                       <div className="flex items-baseline justify-between gap-4">
-                        <h3 className="text-base font-medium text-white">
+                        <h3 className="text-lg font-medium text-white">
                           {project.title}
                         </h3>
-                        <span className={eyebrow}>{project.tag}</span>
+                        <span className={`${eyebrow} shrink-0 whitespace-nowrap`}>
+                          {project.tag}
+                        </span>
                       </div>
-                      <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-zinc-400">
+                      <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-zinc-300">
                         {project.description}
                       </p>
-                      <div className="mt-2.5 flex items-center justify-between gap-4">
-                        <p className="font-mono text-[10px] tracking-wider text-zinc-500">
+                      <div className="mt-2.5 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                        <p className="font-mono text-[12px] tracking-wider text-zinc-400">
                           {project.stack.join(" · ")}
                         </p>
                         <div className="flex shrink-0 items-center gap-4">
@@ -441,7 +447,7 @@ export default function Overlay() {
               <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                 {portfolioData.about.headline}
               </h2>
-              <p className="mt-5 max-w-xl text-sm leading-relaxed text-zinc-300">
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-300">
                 {portfolioData.about.bio}
               </p>
               <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-zinc-800 pt-5 sm:grid-cols-3">
@@ -455,7 +461,7 @@ export default function Overlay() {
           {/* 05 · Contact */}
           {currentStepIndex === 5 && (
             <div>
-              <p className="max-w-md text-sm leading-relaxed text-zinc-400">
+              <p className="max-w-lg text-base leading-relaxed text-zinc-400">
                 Open to frontend engineering roles, Next.js and React Native builds,
                 and collaborations.
               </p>
@@ -515,7 +521,7 @@ function SkillColumn({ title, items }: { title: string; items: string[] }) {
       <p className={`${eyebrow} border-b border-zinc-800 pb-2`}>{title}</p>
       <ul className="mt-3 space-y-1.5">
         {items.map((item) => (
-          <li key={item} className="text-sm text-zinc-200">
+          <li key={item} className="text-base text-zinc-200">
             {item}
           </li>
         ))}
@@ -528,7 +534,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className={eyebrow}>{label}</dt>
-      <dd className="mt-1.5 text-sm text-white">{value}</dd>
+      <dd className="mt-1.5 text-base text-white">{value}</dd>
     </div>
   );
 }

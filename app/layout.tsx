@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import {
   personJsonLd,
   SITE_DESCRIPTION,
@@ -76,6 +77,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
         {children}
+        <Analytics />
       </body>
     </html>
   );

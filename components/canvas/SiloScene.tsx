@@ -38,6 +38,13 @@ const STEP_OVERSHOOT = 10; // extra steps below floor 00 and above floor 05
 const FIRST_STEP = -STEP_OVERSHOOT;
 const LAST_STEP = G.totalSteps + STEP_OVERSHOOT;
 
+/**
+ * The staircase never stops: a slow spin on top of the per-floor turns makes
+ * the helix read as a staircase flowing steadily downward (positive rotation
+ * shifts every tread down its own spiral).
+ */
+const STAIR_SPIN_SPEED = 0.1; // rad/s
+
 const tmpObj = new THREE.Object3D();
 const tmpColor = new THREE.Color();
 
@@ -64,29 +71,30 @@ function ExteriorSiloRig({
       duration: 1.35,
       ease: "power3.inOut",
       overwrite: "auto",
-      onUpdate: () => {
-        // Rotate the interior helix one full turn per floor so the stairs
-        // visibly wind up/down inside the cutaway pipe while the camera climbs.
-        if (stairGroupRef.current) {
-          stairGroupRef.current.rotation.y =
-            -anim.current.floorProgress * Math.PI * 2;
-        }
-      },
-      onComplete: () => {
-        if (stairGroupRef.current) {
-          stairGroupRef.current.rotation.y =
-            -slotOf(currentStepIndex) * Math.PI * 2;
-        }
-        completeTransition();
-      }
+      onComplete: completeTransition
     });
     return () => {
       tween.kill();
     };
   }, [currentStepIndex, completeTransition, stairGroupRef]);
 
+  const spin = useRef(0);
+  const reduceMotion = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    []
+  );
+
   useFrame((state, delta) => {
     const floorY = anim.current.floorProgress * G.floorHeight;
+
+    // One full helix turn per floor while travelling, plus the idle spin
+    if (!reduceMotion) spin.current += Math.min(delta, 0.1) * STAIR_SPIN_SPEED;
+    if (stairGroupRef.current) {
+      stairGroupRef.current.rotation.y =
+        -anim.current.floorProgress * Math.PI * 2 + spin.current;
+    }
     const breathe = Math.sin(state.clock.elapsedTime * 1.2) * 0.06;
     const px = pointer.x * 0.7;
     const py = pointer.y * 0.35;
@@ -370,6 +378,180 @@ interface StepInfo {
   isLanding: boolean;
 }
 
+/* ------------------------------------------------------------------ */
+/* Silhouettes walking down the spiral — spawn above the top floor,   */
+/* descend the whole helix, fade out below the ground floor, loop     */
+/* ------------------------------------------------------------------ */
+
+const WALKER_COUNT = 12;
+const WALK_SPEED = 1.2; // steps per second along the helix
+const LOOP_STEPS = LAST_STEP - FIRST_STEP;
+const FADE_STEPS = 4; // fade in/out over the first/last few steps
+const WALKER_RIM_COLOR = new THREE.Color("#ff9a3c").multiplyScalar(1.6);
+
+interface WalkerRig {
+  root: THREE.Group | null;
+  legL: THREE.Group | null;
+  legR: THREE.Group | null;
+  armL: THREE.Group | null;
+  armR: THREE.Group | null;
+}
+
+function StairWalkers() {
+  const walkers = useMemo(() => {
+    let seed = 1999;
+    const rnd = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    return Array.from({ length: WALKER_COUNT }, (_, k) => ({
+      // spread evenly along the loop with a little jitter so it feels unplanned
+      offset: (k / WALKER_COUNT) * LOOP_STEPS + rnd() * 5,
+      speed: WALK_SPEED * (0.85 + rnd() * 0.3),
+      lane: (rnd() - 0.5) * 0.36, // radial offset across the tread
+      height: 0.92 + rnd() * 0.16
+    }));
+  }, []);
+
+  const rigs = useRef<WalkerRig[]>(
+    walkers.map(() => ({ root: null, legL: null, legR: null, armL: null, armR: null }))
+  );
+
+  const parts = useMemo(
+    () => ({
+      head: new THREE.SphereGeometry(0.12, 16, 12),
+      torso: new THREE.CapsuleGeometry(0.17, 0.42, 6, 12),
+      leg: new THREE.CapsuleGeometry(0.075, 0.7, 4, 8),
+      arm: new THREE.CapsuleGeometry(0.055, 0.55, 4, 8)
+    }),
+    []
+  );
+  // one material per walker so each can fade independently; near-black bodies
+  // with an amber fresnel rim so they read as backlit silhouettes
+  const materials = useMemo(
+    () =>
+      walkers.map(() => {
+        const mat = new THREE.MeshStandardMaterial({
+          color: "#0a0503",
+          roughness: 0.85,
+          metalness: 0.1,
+          transparent: true
+        });
+        mat.onBeforeCompile = (shader) => {
+          shader.uniforms.uRimColor = { value: WALKER_RIM_COLOR };
+          shader.fragmentShader = shader.fragmentShader
+            .replace(
+              "#include <common>",
+              "#include <common>\nuniform vec3 uRimColor;"
+            )
+            .replace(
+              "#include <emissivemap_fragment>",
+              `#include <emissivemap_fragment>
+              float rim = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
+              totalEmissiveRadiance += uRimColor * pow(rim, 2.6);`
+            );
+        };
+        return mat;
+      }),
+    [walkers]
+  );
+
+  useEffect(
+    () => () => {
+      Object.values(parts).forEach((g) => g.dispose());
+      materials.forEach((m) => m.dispose());
+    },
+    [parts, materials]
+  );
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    walkers.forEach((w, k) => {
+      const rig = rigs.current[k];
+      if (!rig.root) return;
+
+      const travelled = (t * w.speed + w.offset) % LOOP_STEPS;
+      const s = LAST_STEP - travelled; // continuous step index, decreasing
+      const angle = s * STEP_ANGLE;
+      const r = G.stairRadius + w.lane;
+
+      // hold on each tread, then drop to the next one mid-stride
+      const base = Math.floor(s);
+      const drop = THREE.MathUtils.smoothstep(s - base, 0.3, 0.7);
+      const y = (base + drop) * STEP_RISE + 0.08;
+
+      const phase = travelled * Math.PI; // one full gait cycle every two steps
+      const swing = Math.sin(phase);
+
+      rig.root.position.set(
+        r * Math.sin(angle),
+        y + Math.abs(swing) * 0.035,
+        r * Math.cos(angle)
+      );
+      // face the direction of travel (down the helix = decreasing angle)
+      rig.root.rotation.set(0.06, angle - Math.PI / 2, 0);
+
+      if (rig.legL) rig.legL.rotation.x = swing * 0.55;
+      if (rig.legR) rig.legR.rotation.x = -swing * 0.55;
+      if (rig.armL) rig.armL.rotation.x = -swing * 0.45;
+      if (rig.armR) rig.armR.rotation.x = swing * 0.45;
+
+      materials[k].opacity = THREE.MathUtils.clamp(
+        Math.min(s - FIRST_STEP, LAST_STEP - s) / FADE_STEPS,
+        0,
+        1
+      );
+    });
+  });
+
+  return (
+    <>
+      {walkers.map((w, k) => {
+        const mat = materials[k];
+        const rig = rigs.current[k];
+        return (
+          <group
+            key={k}
+            ref={(el) => {
+              rig.root = el;
+            }}
+            scale={w.height}
+          >
+            <mesh geometry={parts.head} material={mat} position={[0, 1.6, 0]} castShadow />
+            <mesh geometry={parts.torso} material={mat} position={[0, 1.2, 0]} castShadow />
+            {/* legs pivot at the hips */}
+            {([-1, 1] as const).map((side) => (
+              <group
+                key={`leg${side}`}
+                position={[side * 0.1, 0.88, 0]}
+                ref={(el) => {
+                  if (side < 0) rig.legL = el;
+                  else rig.legR = el;
+                }}
+              >
+                <mesh geometry={parts.leg} material={mat} position={[0, -0.425, 0]} castShadow />
+              </group>
+            ))}
+            {/* arms pivot at the shoulders */}
+            {([-1, 1] as const).map((side) => (
+              <group
+                key={`arm${side}`}
+                position={[side * 0.24, 1.42, 0]}
+                ref={(el) => {
+                  if (side < 0) rig.armL = el;
+                  else rig.armR = el;
+                }}
+              >
+                <mesh geometry={parts.arm} material={mat} position={[0, -0.33, 0]} castShadow />
+              </group>
+            ))}
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
 const InteriorSpiralStaircase = React.forwardRef<THREE.Group>((_, ref) => {
   const currentStepIndex = useSiloStore((s) => s.currentStepIndex);
 
@@ -576,6 +758,8 @@ const InteriorSpiralStaircase = React.forwardRef<THREE.Group>((_, ref) => {
           </group>
         );
       })}
+
+      <StairWalkers />
     </group>
   );
 });

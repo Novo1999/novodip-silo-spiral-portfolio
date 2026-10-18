@@ -44,6 +44,8 @@ export default function Overlay() {
   const touchStartYRef = useRef<number | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [hoveredProject, setHoveredProject] = useState<ProjectItem | null>(null);
+  // pointer over the section panel: dims the silo behind it
+  const [panelHovered, setPanelHovered] = useState(false);
 
   const currentLevel = SILO_LEVELS[currentStepIndex];
   // the portal's section only switches after the camera arrives
@@ -81,6 +83,7 @@ export default function Overlay() {
 
   useEffect(() => {
     if (!shutterOpen || sectionIndex !== 2) setHoveredProject(null);
+    if (!shutterOpen) setPanelHovered(false);
   }, [shutterOpen, sectionIndex]);
 
   useEffect(() => {
@@ -136,6 +139,14 @@ export default function Overlay() {
       onTouchEnd={handleTouchEnd}
       className="pointer-events-auto fixed inset-0 z-20 select-none overflow-hidden"
     >
+      {/* ---- Dims the silo while the section panel is hovered ---- */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 bg-[#0e0804] transition-opacity duration-500 ease-out ${
+          panelHovered ? "opacity-40" : "opacity-0"
+        }`}
+      />
+
       {/* ---- Top-left: identity ---- */}
       <div className="absolute left-6 top-6 sm:left-9 sm:top-8">
         <p className={eyebrow}>
@@ -277,6 +288,8 @@ export default function Overlay() {
         <div
           ref={panelRef}
           data-shutter={shutterOpen ? "open" : "closed"}
+          onMouseEnter={() => setPanelHovered(true)}
+          onMouseLeave={() => setPanelHovered(false)}
           className={`relative w-full max-w-3xl origin-center overflow-hidden border border-zinc-700/50 bg-[#0d0703]/95 px-7 py-7 transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-10 sm:py-9 ${
             shutterOpen
               ? "pointer-events-auto scale-y-100 opacity-100"

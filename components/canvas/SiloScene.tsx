@@ -387,55 +387,331 @@ const WALKER_COUNT = 12;
 const WALK_SPEED = 1.2; // steps per second along the helix
 const LOOP_STEPS = LAST_STEP - FIRST_STEP;
 const FADE_STEPS = 4; // fade in/out over the first/last few steps
-const WALKER_RIM_COLOR = new THREE.Color("#ff9a3c").multiplyScalar(1.6);
+const WALKER_RIM_COLOR = new THREE.Color("#ff9a3c").multiplyScalar(2.8);
 
-interface WalkerRig {
+/** Joints of one figure, animated every frame */
+interface FigureRig {
   root: THREE.Group | null;
-  legL: THREE.Group | null;
-  legR: THREE.Group | null;
-  armL: THREE.Group | null;
-  armR: THREE.Group | null;
+  pelvis: THREE.Group | null;
+  torso: THREE.Group | null;
+  head: THREE.Group | null;
+  coat: THREE.Group | null;
+  thighs: (THREE.Group | null)[];
+  shins: (THREE.Group | null)[];
+  feet: (THREE.Group | null)[];
+  upperArms: (THREE.Group | null)[];
+  forearms: (THREE.Group | null)[];
+}
+
+interface FigureVariant {
+  offset: number; // position along the loop, in steps
+  speed: number;
+  lane: number; // radial offset across the tread
+  height: number;
+  shoulders: number; // shoulder-width multiplier
+  hips: number; // hip-width multiplier
+  coat: number; // coat length in metres below the waist, 0 = fitted jumpsuit
+  hood: boolean;
+  bun: boolean;
+}
+
+/** A cylinder hanging from its top end, for limbs that pivot at a joint */
+function limb(rTop: number, rBottom: number, length: number) {
+  const g = new THREE.CylinderGeometry(rTop, rBottom, length, 12, 1);
+  g.translate(0, -length / 2, 0);
+  return g;
+}
+
+/** Lathe profile given as [radius, y] pairs */
+function lathe(points: [number, number][], segments = 28) {
+  return new THREE.LatheGeometry(
+    points.map(([r, y]) => new THREE.Vector2(r, y)),
+    segments
+  );
+}
+
+function createFigureGeometry() {
+  // feet point along +Z (the walking direction)
+  const foot = new THREE.CapsuleGeometry(0.034, 0.17, 4, 10);
+  foot.rotateX(Math.PI / 2);
+  foot.translate(0, -0.035, 0.055);
+
+  return {
+    joint: new THREE.SphereGeometry(1, 14, 10),
+    head: new THREE.SphereGeometry(1, 22, 16),
+    // half-shell hood that sits behind the head, open at the face
+    hood: new THREE.SphereGeometry(1, 20, 14, Math.PI, Math.PI, 0, Math.PI * 0.64),
+    torso: lathe([
+      [0.02, -0.02],
+      [0.13, 0.0],
+      [0.142, 0.07],
+      [0.124, 0.17], // waist
+      [0.148, 0.3],
+      [0.172, 0.41], // chest
+      [0.168, 0.47],
+      [0.128, 0.525],
+      [0.05, 0.56]
+    ]),
+    neck: limb(0.049, 0.056, 0.09),
+    thigh: limb(0.086, 0.057, 0.46),
+    shin: limb(0.057, 0.036, 0.45),
+    upperArm: limb(0.058, 0.045, 0.3),
+    forearm: limb(0.045, 0.031, 0.27),
+    foot,
+    coat: (length: number) =>
+      lathe([
+        [0.152, 0.14],
+        [0.174, 0.02],
+        [0.188, -length * 0.35],
+        [0.207, -length * 0.72],
+        [0.226, -length]
+      ])
+  };
+}
+
+function SilhouetteFigure({
+  variant: v,
+  material,
+  rig,
+  geo
+}: {
+  variant: FigureVariant;
+  material: THREE.Material;
+  rig: FigureRig;
+  geo: ReturnType<typeof createFigureGeometry>;
+}) {
+  const coatGeometry = useMemo(
+    () => (v.coat > 0 ? geo.coat(v.coat) : null),
+    [geo, v.coat]
+  );
+  useEffect(() => () => coatGeometry?.dispose(), [coatGeometry]);
+
+  const shoulderX = 0.19 * v.shoulders;
+  const hipX = 0.088 * v.hips;
+
+  return (
+    <group
+      ref={(el) => {
+        rig.root = el;
+      }}
+      scale={v.height}
+    >
+      {/* pelvis at hip height; legs hang from it, torso sits on it */}
+      <group
+        position={[0, 0.98, 0]}
+        ref={(el) => {
+          rig.pelvis = el;
+        }}
+      >
+        <mesh
+          geometry={geo.joint}
+          material={material}
+          position={[0, 0.02, 0]}
+          scale={[0.165 * v.hips, 0.115, 0.12]}
+          castShadow
+        />
+
+        {([-1, 1] as const).map((side, i) => (
+          <group
+            key={`leg${side}`}
+            position={[side * hipX, 0, 0]}
+            ref={(el) => {
+              rig.thighs[i] = el;
+            }}
+          >
+            <mesh geometry={geo.thigh} material={material} castShadow />
+            <group
+              position={[0, -0.46, 0]}
+              ref={(el) => {
+                rig.shins[i] = el;
+              }}
+            >
+              <mesh geometry={geo.joint} material={material} scale={0.058} castShadow />
+              <mesh geometry={geo.shin} material={material} castShadow />
+              <group
+                position={[0, -0.45, 0]}
+                ref={(el) => {
+                  rig.feet[i] = el;
+                }}
+              >
+                <mesh geometry={geo.joint} material={material} scale={0.036} />
+                <mesh geometry={geo.foot} material={material} castShadow />
+              </group>
+            </group>
+          </group>
+        ))}
+
+        {coatGeometry && (
+          <group
+            ref={(el) => {
+              rig.coat = el;
+            }}
+          >
+            <mesh
+              geometry={coatGeometry}
+              material={material}
+              scale={[1.06 * v.hips, 1, 0.8]}
+              castShadow
+            />
+          </group>
+        )}
+
+        <group
+          position={[0, 0.06, 0]}
+          ref={(el) => {
+            rig.torso = el;
+          }}
+        >
+          <mesh
+            geometry={geo.torso}
+            material={material}
+            scale={[(v.coat > 0 ? 1.17 : 1.1) * v.shoulders, 1, v.coat > 0 ? 0.78 : 0.72]}
+            castShadow
+          />
+          {/* shoulders cap the torso so the arms read as attached */}
+          {([-1, 1] as const).map((side) => (
+            <mesh
+              key={`sh${side}`}
+              geometry={geo.joint}
+              material={material}
+              position={[side * (shoulderX - 0.02), 0.47, 0]}
+              scale={[0.08, 0.066, 0.072]}
+              castShadow
+            />
+          ))}
+          <mesh geometry={geo.neck} material={material} position={[0, 0.645, 0.008]} castShadow />
+
+
+          <group
+            position={[0, 0.76, 0.01]}
+            ref={(el) => {
+              rig.head = el;
+            }}
+          >
+            <mesh
+              geometry={geo.head}
+              material={material}
+              position={[0, 0.012, 0]}
+              scale={[0.09, 0.104, 0.1]}
+              castShadow
+            />
+            {/* jaw and chin, set slightly forward of the skull */}
+            <mesh
+              geometry={geo.head}
+              material={material}
+              position={[0, -0.045, 0.02]}
+              scale={[0.068, 0.07, 0.075]}
+            />
+            {/* hair mass shapes the back and crown of the skull */}
+            <mesh
+              geometry={geo.head}
+              material={material}
+              position={[0, 0.026, -0.03]}
+              scale={[0.096, 0.104, 0.104]}
+            />
+            {v.bun && (
+              <mesh
+                geometry={geo.joint}
+                material={material}
+                position={[0, 0.06, -0.1]}
+                scale={0.046}
+              />
+            )}
+            {v.hood && (
+              <mesh
+                geometry={geo.hood}
+                material={material}
+                position={[0, 0.005, -0.012]}
+                scale={[0.132, 0.15, 0.132]}
+              />
+            )}
+          </group>
+
+          {([-1, 1] as const).map((side, i) => (
+            <group
+              key={`arm${side}`}
+              position={[side * shoulderX, 0.465, 0]}
+              rotation={[0, 0, side * 0.07]}
+              ref={(el) => {
+                rig.upperArms[i] = el;
+              }}
+            >
+              <mesh geometry={geo.upperArm} material={material} castShadow />
+              <group
+                position={[0, -0.3, 0]}
+                ref={(el) => {
+                  rig.forearms[i] = el;
+                }}
+              >
+                <mesh geometry={geo.joint} material={material} scale={0.046} />
+                <mesh geometry={geo.forearm} material={material} castShadow />
+                <mesh
+                  geometry={geo.joint}
+                  material={material}
+                  position={[0, -0.31, 0.005]}
+                  scale={[0.028, 0.058, 0.022]}
+                />
+              </group>
+            </group>
+          ))}
+        </group>
+      </group>
+    </group>
+  );
 }
 
 function StairWalkers() {
-  const walkers = useMemo(() => {
+  const variants = useMemo<FigureVariant[]>(() => {
     let seed = 1999;
     const rnd = () => {
       seed = (seed * 16807) % 2147483647;
       return seed / 2147483647;
     };
-    return Array.from({ length: WALKER_COUNT }, (_, k) => ({
-      // spread evenly along the loop with a little jitter so it feels unplanned
-      offset: (k / WALKER_COUNT) * LOOP_STEPS + rnd() * 5,
-      speed: WALK_SPEED * (0.85 + rnd() * 0.3),
-      lane: (rnd() - 0.5) * 0.36, // radial offset across the tread
-      height: 0.92 + rnd() * 0.16
-    }));
+    return Array.from({ length: WALKER_COUNT }, (_, k) => {
+      const coat = rnd() < 0.62 ? 0.42 + rnd() * 0.2 : 0;
+      const slender = rnd() < 0.45;
+      return {
+        offset: (k / WALKER_COUNT) * LOOP_STEPS + rnd() * 5,
+        speed: WALK_SPEED * (0.85 + rnd() * 0.3),
+        lane: (rnd() - 0.5) * 0.36,
+        height: 0.9 + rnd() * 0.16,
+        shoulders: slender ? 0.86 + rnd() * 0.06 : 0.98 + rnd() * 0.12,
+        hips: slender ? 1.04 + rnd() * 0.08 : 0.94 + rnd() * 0.06,
+        coat,
+        hood: coat > 0 && rnd() < 0.4,
+        bun: slender && rnd() < 0.6
+      };
+    });
   }, []);
 
-  const rigs = useRef<WalkerRig[]>(
-    walkers.map(() => ({ root: null, legL: null, legR: null, armL: null, armR: null }))
+  const rigs = useRef<FigureRig[]>(
+    variants.map(() => ({
+      root: null,
+      pelvis: null,
+      torso: null,
+      head: null,
+      coat: null,
+      thighs: [null, null],
+      shins: [null, null],
+      feet: [null, null],
+      upperArms: [null, null],
+      forearms: [null, null]
+    }))
   );
 
-  const parts = useMemo(
-    () => ({
-      head: new THREE.SphereGeometry(0.12, 16, 12),
-      torso: new THREE.CapsuleGeometry(0.17, 0.42, 6, 12),
-      leg: new THREE.CapsuleGeometry(0.075, 0.7, 4, 8),
-      arm: new THREE.CapsuleGeometry(0.055, 0.55, 4, 8)
-    }),
-    []
-  );
+  const geo = useMemo(createFigureGeometry, []);
+
   // one material per walker so each can fade independently; near-black bodies
   // with an amber fresnel rim so they read as backlit silhouettes
   const materials = useMemo(
     () =>
-      walkers.map(() => {
+      variants.map(() => {
         const mat = new THREE.MeshStandardMaterial({
-          color: "#0a0503",
-          roughness: 0.85,
-          metalness: 0.1,
-          transparent: true
+          color: "#030201",
+          roughness: 1,
+          metalness: 0,
+          transparent: true,
+          side: THREE.DoubleSide // coat hems and hoods are open shells
         });
         mat.onBeforeCompile = (shader) => {
           shader.uniforms.uRimColor = { value: WALKER_RIM_COLOR };
@@ -448,32 +724,34 @@ function StairWalkers() {
               "#include <emissivemap_fragment>",
               `#include <emissivemap_fragment>
               float rim = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
-              totalEmissiveRadiance += uRimColor * pow(rim, 2.6);`
+              totalEmissiveRadiance += uRimColor * pow(rim, 4.6);`
             );
         };
         return mat;
       }),
-    [walkers]
+    [variants]
   );
 
   useEffect(
     () => () => {
-      Object.values(parts).forEach((g) => g.dispose());
+      Object.values(geo).forEach((g) => {
+        if (g instanceof THREE.BufferGeometry) g.dispose();
+      });
       materials.forEach((m) => m.dispose());
     },
-    [parts, materials]
+    [geo, materials]
   );
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    walkers.forEach((w, k) => {
+    variants.forEach((v, k) => {
       const rig = rigs.current[k];
       if (!rig.root) return;
 
-      const travelled = (t * w.speed + w.offset) % LOOP_STEPS;
+      const travelled = (t * v.speed + v.offset) % LOOP_STEPS;
       const s = LAST_STEP - travelled; // continuous step index, decreasing
       const angle = s * STEP_ANGLE;
-      const r = G.stairRadius + w.lane;
+      const r = G.stairRadius + v.lane;
 
       // hold on each tread, then drop to the next one mid-stride
       const base = Math.floor(s);
@@ -481,20 +759,41 @@ function StairWalkers() {
       const y = (base + drop) * STEP_RISE + 0.08;
 
       const phase = travelled * Math.PI; // one full gait cycle every two steps
-      const swing = Math.sin(phase);
+      const sway = Math.sin(phase);
 
       rig.root.position.set(
         r * Math.sin(angle),
-        y + Math.abs(swing) * 0.035,
+        y + Math.abs(Math.cos(phase)) * 0.025,
         r * Math.cos(angle)
       );
       // face the direction of travel (down the helix = decreasing angle)
-      rig.root.rotation.set(0.06, angle - Math.PI / 2, 0);
+      rig.root.rotation.set(0, angle - Math.PI / 2, 0);
 
-      if (rig.legL) rig.legL.rotation.x = swing * 0.55;
-      if (rig.legR) rig.legR.rotation.x = -swing * 0.55;
-      if (rig.armL) rig.armL.rotation.x = -swing * 0.45;
-      if (rig.armR) rig.armR.rotation.x = swing * 0.45;
+      // hips and shoulders counter-rotate; slight lean into the descent
+      if (rig.pelvis) rig.pelvis.rotation.set(0, -sway * 0.06, sway * 0.025);
+      if (rig.torso) rig.torso.rotation.set(0.07, sway * 0.09, -sway * 0.02);
+      if (rig.head) rig.head.rotation.set(0.2, -sway * 0.05, 0);
+      if (rig.coat) rig.coat.rotation.set(0.04 + Math.sin(phase * 2) * 0.035, 0, sway * 0.03);
+
+      for (let i = 0; i < 2; i++) {
+        // left leg leads on phase, right leg half a cycle later
+        const p = phase + i * Math.PI;
+        const forward = Math.sin(p);
+        const swingPhase = Math.max(0, Math.cos(p)); // knee folds as the leg swings through
+
+        const thigh = rig.thighs[i];
+        const shin = rig.shins[i];
+        const foot = rig.feet[i];
+        if (thigh) thigh.rotation.x = -forward * 0.42 - 0.1;
+        if (shin) shin.rotation.x = 0.14 + swingPhase * 0.78;
+        if (foot) foot.rotation.x = 0.05 - swingPhase * 0.3;
+
+        // arms swing opposite to the leg on the same side, elbows flex forward
+        const arm = rig.upperArms[i];
+        const forearm = rig.forearms[i];
+        if (arm) arm.rotation.x = forward * 0.34;
+        if (forearm) forearm.rotation.x = -(0.22 + Math.max(0, -forward) * 0.32);
+      }
 
       materials[k].opacity = THREE.MathUtils.clamp(
         Math.min(s - FIRST_STEP, LAST_STEP - s) / FADE_STEPS,
@@ -506,48 +805,15 @@ function StairWalkers() {
 
   return (
     <>
-      {walkers.map((w, k) => {
-        const mat = materials[k];
-        const rig = rigs.current[k];
-        return (
-          <group
-            key={k}
-            ref={(el) => {
-              rig.root = el;
-            }}
-            scale={w.height}
-          >
-            <mesh geometry={parts.head} material={mat} position={[0, 1.6, 0]} castShadow />
-            <mesh geometry={parts.torso} material={mat} position={[0, 1.2, 0]} castShadow />
-            {/* legs pivot at the hips */}
-            {([-1, 1] as const).map((side) => (
-              <group
-                key={`leg${side}`}
-                position={[side * 0.1, 0.88, 0]}
-                ref={(el) => {
-                  if (side < 0) rig.legL = el;
-                  else rig.legR = el;
-                }}
-              >
-                <mesh geometry={parts.leg} material={mat} position={[0, -0.425, 0]} castShadow />
-              </group>
-            ))}
-            {/* arms pivot at the shoulders */}
-            {([-1, 1] as const).map((side) => (
-              <group
-                key={`arm${side}`}
-                position={[side * 0.24, 1.42, 0]}
-                ref={(el) => {
-                  if (side < 0) rig.armL = el;
-                  else rig.armR = el;
-                }}
-              >
-                <mesh geometry={parts.arm} material={mat} position={[0, -0.33, 0]} castShadow />
-              </group>
-            ))}
-          </group>
-        );
-      })}
+      {variants.map((v, k) => (
+        <SilhouetteFigure
+          key={k}
+          variant={v}
+          material={materials[k]}
+          rig={rigs.current[k]}
+          geo={geo}
+        />
+      ))}
     </>
   );
 }
